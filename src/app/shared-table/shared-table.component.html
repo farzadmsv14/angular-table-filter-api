@@ -1,0 +1,98 @@
+<div class="card-body" dir="rtl">
+  <div class="table-responsive"style="min-height: 200px;">
+    <table class="table align-middle dt-responsive nowrap w-100 table-check">
+      <thead class="table-light">
+        <tr>
+          <th *ngFor="let col of columns" class="position-relative user-select-none text-center" style="cursor: pointer;">
+            {{ col.title }}
+            <button *ngIf="col.filterable" (click)="toggleFilter(col.field)" class="btn btn-sm btn-outline-secondary ms-1 border-0">
+              فیلتر
+            </button>
+            <div *ngIf="filterOpen[col.field] && col.filterable" class="position-absolute bg-white border p-2 shadow-sm" 
+            style="top: 100%; right:30%; min-width: 150px; z-index: 10;">
+
+              <!-- فیلتر متن -->
+              <ng-container *ngIf="col.type === 'text'">
+                <input type="text"
+                  [value]="filters[col.field] || ''"
+                  (input)="onTextFilterChange(col.field, ($any($event.target)).value)"
+                  class="form-control form-control-sm" />
+              </ng-container>
+
+              <!-- فیلتر بولین -->
+              <ng-container *ngIf="col.type === 'boolean'">
+                <div class="form-check mt-2">
+                  <input type="checkbox" class="form-check-input"
+                    [checked]="filters[col.field] === true"
+                    (change)="onCheckboxFilterChange(col.field, ($any($event.target)).checked)" />
+                  <label class="form-check-label">فقط بله</label>
+                </div>
+              </ng-container>
+
+              <!-- فیلتر انتخابی -->
+              <ng-container *ngIf="col.type === 'select'">
+                <select
+                  [value]="filters[col.field] || ''"
+                  (change)="onSelectFilterChange(col.field, ($any($event.target)).value)"
+                  class="form-select form-select-sm mt-2">
+                  <option value="">همه</option>
+                  <option *ngFor="let opt of col.options" [value]="opt">{{ opt }}</option>
+                </select>
+              </ng-container>
+
+              <!-- فیلتر رادیویی -->
+              <ng-container *ngIf="col.type === 'radio'">
+                <div *ngFor="let opt of col.options" class="form-check mt-1">
+                  <input type="radio" class="form-check-input"
+                    [name]="'radio-' + col.field"
+                    [value]="opt"
+                    [checked]="filters[col.field] === opt"
+                    (change)="onRadioFilterChange(col.field, opt)" />
+                  <label class="form-check-label">{{ opt }}</label>
+                </div>
+                <div class="form-check mt-1">
+                  <input type="radio" class="form-check-input"
+                    [name]="'radio-' + col.field"
+                    value=""
+                    [checked]="!filters[col.field]"
+                    (change)="onRadioFilterChange(col.field, '')" />
+                  <label class="form-check-label">حذف فیلتر</label>
+                </div>
+              </ng-container>
+              <!-- فیلتر تاریخ -->
+              <ng-container *ngIf="col.type === 'date'">
+                <input type="date"
+                  [value]="filters[col.field] || ''"
+                  (input)="onTextFilterChange(col.field, ($any($event.target)).value)"
+                  class="form-control form-control-sm mt-2" />
+              </ng-container>
+              <button (click)="clearFilter(col.field)" class="btn btn-sm btn-outline-danger border-0 mt-2">حذف</button>
+            </div>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of pagedData">
+          <td *ngFor="let col of columns" class="text-center">
+            <ng-container [ngSwitch]="col.type">
+              <ng-container *ngSwitchCase="'boolean'">
+                {{ row[col.field] ? 'بله' : 'خیر' }}
+              </ng-container>
+              <ng-container *ngSwitchDefault>
+                {{ row[col.field] }}
+              </ng-container>
+            </ng-container>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- Pagination -->
+  <div class="mt-3 text-center">
+    <button (click)="prevPage()" [disabled]="pageIndex === 0" class="btn btn-sm btn-primary me-2">قبلی</button>
+    صفحه {{ pageIndex + 1 }} از {{ ceil(filteredData.length / pageSize) }}
+    <button (click)="nextPage()" [disabled]="(pageIndex + 1) * pageSize >= filteredData.length" class="btn btn-sm btn-primary ms-2">بعدی</button>
+  </div>
+</div>
+
+
