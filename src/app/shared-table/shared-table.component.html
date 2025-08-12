@@ -1,98 +1,98 @@
 <div class="card-body" dir="rtl">
-  <div class="table-responsive"style="min-height: 200px;">
+  <div class="table-responsive" style="min-height: 200px">
     <table class="table align-middle dt-responsive nowrap w-100 table-check">
       <thead class="table-light">
         <tr>
-          <th *ngFor="let col of columns" class="position-relative user-select-none text-center" style="cursor: pointer;">
+          <th *ngFor="let col of columns" class="position-relative user-select-none text-center" style="cursor: pointer">
             {{ col.title }}
-            <button *ngIf="col.filterable" (click)="toggleFilter(col.field)" class="btn btn-sm btn-outline-secondary ms-1 border-0">
-              فیلتر
-            </button>
-            <div *ngIf="filterOpen[col.field] && col.filterable" class="position-absolute bg-white border p-2 shadow-sm" 
-            style="top: 100%; right:30%; min-width: 150px; z-index: 10;">
-
+            <button *ngIf="col.filterable" (click)="toggleFilter(col.field)" class="btn btn-sm btn-outline-secondary ms-1 border-0">فیلتر</button>
+            <div *ngIf="filterOpen[col.field] && col.filterable" class="position-absolute bg-white border p-2 shadow-sm" style="top: 100%; right: 30%; min-width: 150px; z-index: 10">
               <!-- فیلتر متن -->
               <ng-container *ngIf="col.type === 'text'">
-                <input type="text"
-                  [value]="filters[col.field] || ''"
-                  (input)="onTextFilterChange(col.field, ($any($event.target)).value)"
-                  class="form-control form-control-sm" />
+                <input type="text" [value]="filters[col.field] || ''" (input)="onTextFilterChange(col.field, $any($event.target).value)" class="form-control form-control-sm" />
               </ng-container>
 
-              <!-- فیلتر بولین -->
+              <!-- فیلتر بولی -->
               <ng-container *ngIf="col.type === 'boolean'">
-                <div class="form-check mt-2">
-                  <input type="checkbox" class="form-check-input"
-                    [checked]="filters[col.field] === true"
-                    (change)="onCheckboxFilterChange(col.field, ($any($event.target)).checked)" />
-                  <label class="form-check-label">فقط بله</label>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="checkbox" [checked]="filters[col.field]" (change)="onCheckboxFilterChange(col.field, $any($event.target).checked)" />
+                  <label class="form-check-label">دارد</label>
                 </div>
               </ng-container>
 
               <!-- فیلتر انتخابی -->
               <ng-container *ngIf="col.type === 'select'">
-                <select
-                  [value]="filters[col.field] || ''"
-                  (change)="onSelectFilterChange(col.field, ($any($event.target)).value)"
-                  class="form-select form-select-sm mt-2">
+                <select class="form-select form-select-sm" [value]="filters[col.field] || ''" (change)="onSelectFilterChange(col.field, $any($event.target).value)">
                   <option value="">همه</option>
-                  <option *ngFor="let opt of col.options" [value]="opt">{{ opt }}</option>
+                  <option *ngFor="let option of col.options" [value]="option">
+                    {{ option }}
+                  </option>
                 </select>
               </ng-container>
 
-              <!-- فیلتر رادیویی -->
+              <!-- فیلتر رادیو -->
               <ng-container *ngIf="col.type === 'radio'">
-                <div *ngFor="let opt of col.options" class="form-check mt-1">
-                  <input type="radio" class="form-check-input"
-                    [name]="'radio-' + col.field"
-                    [value]="opt"
-                    [checked]="filters[col.field] === opt"
-                    (change)="onRadioFilterChange(col.field, opt)" />
-                  <label class="form-check-label">{{ opt }}</label>
-                </div>
-                <div class="form-check mt-1">
-                  <input type="radio" class="form-check-input"
-                    [name]="'radio-' + col.field"
-                    value=""
-                    [checked]="!filters[col.field]"
-                    (change)="onRadioFilterChange(col.field, '')" />
-                  <label class="form-check-label">حذف فیلتر</label>
+                <div *ngFor="let option of col.options" class="form-check">
+                  <input type="radio" [name]="col.field" class="form-check-input" [value]="option" [checked]="filters[col.field] === option" (change)="onRadioFilterChange(col.field, option)" />
+                  <label class="form-check-label">{{ option }}</label>
                 </div>
               </ng-container>
+
               <!-- فیلتر تاریخ -->
               <ng-container *ngIf="col.type === 'date'">
-                <input type="date"
-                  [value]="filters[col.field] || ''"
-                  (input)="onTextFilterChange(col.field, ($any($event.target)).value)"
-                  class="form-control form-control-sm mt-2" />
+                <ng-container *ngIf="calendarType === 'miladi'">
+                  <input type="date" [value]="filters[col.field] || ''" (input)="onTextFilterChange(col.field, $any($event.target).value)" class="form-control form-control-sm py-1" />
+                </ng-container>
+                <ng-container *ngIf="calendarType === 'jalali'">
+                  <ng-persian-datepicker [timeEnable]="true" [uiHideAfterSelectDate]="true" [dateFormat]="'YYYY/MM/DD HH:mm:ss'" (dateOnSelect)="onTextFilterChange2(col.field, $any($event))">
+                    <input id="expectedCompletionDatePersian" class="form-control form-control-sm py-1" [formControl]="datapicker" readonly />
+                  </ng-persian-datepicker>
+                </ng-container>
               </ng-container>
-              <button (click)="clearFilter(col.field)" class="btn btn-sm btn-outline-danger border-0 mt-2">حذف</button>
+
+              <button class="btn btn-sm btn-outline-danger mt-2 w-100" (click)="clearFilter(col.field)">حذف فیلتر</button>
             </div>
           </th>
         </tr>
       </thead>
+
       <tbody>
         <tr *ngFor="let row of pagedData">
-          <td *ngFor="let col of columns" class="text-center">
+          <td *ngFor="let col of columns" class="text-center align-middle">
             <ng-container [ngSwitch]="col.type">
               <ng-container *ngSwitchCase="'boolean'">
-                {{ row[col.field] ? 'بله' : 'خیر' }}
+                {{ row[col.field] }}
               </ng-container>
+
+              <ng-container *ngSwitchCase="'select'">
+                {{ row[col.field] }}
+              </ng-container>
+
+              <ng-container *ngSwitchCase="'radio'">
+                {{ row[col.field] }}
+              </ng-container>
+
+              <ng-container *ngSwitchCase="'date'">
+                {{ calendarType === 'jalali' ? toJalali(row[col.field]) : row[col.field] }}
+              </ng-container>
+
               <ng-container *ngSwitchDefault>
                 {{ row[col.field] }}
               </ng-container>
             </ng-container>
           </td>
         </tr>
+        <tr *ngIf="filteredData.length === 0">
+          <td [attr.colspan]="columns.length" class="text-center text-muted">داده‌ای یافت نشد.</td>
+        </tr>
       </tbody>
     </table>
   </div>
-  <!-- Pagination -->
+
+  <!-- پیمایش صفحه -->
   <div class="mt-3 text-center">
     <button (click)="prevPage()" [disabled]="pageIndex === 0" class="btn btn-sm btn-primary me-2">قبلی</button>
     صفحه {{ pageIndex + 1 }} از {{ ceil(filteredData.length / pageSize) }}
     <button (click)="nextPage()" [disabled]="(pageIndex + 1) * pageSize >= filteredData.length" class="btn btn-sm btn-primary ms-2">بعدی</button>
   </div>
 </div>
-
-
