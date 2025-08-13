@@ -5,11 +5,15 @@
         <tr>
           <th *ngFor="let col of columns" class="position-relative user-select-none text-center" style="cursor: pointer">
             {{ col.title }}
-            <button *ngIf="col.filterable" (click)="toggleFilter(col.field)" class="btn btn-sm btn-outline-secondary ms-1 border-0">فیلتر</button>
+            <button *ngIf="col.filterable" (click)="toggleFilter(col.field)" class="btn btn-sm btn-outline-secondary ms-1 border-0">
+              <svg width="14" height="14" fill="currentColor" viewBox="0 0 512 512">
+                <path d="M487.9 0H24.1C4.7 0-6.5 22.6 6.1 38.6l176.3 221.9V464c0 8.5 4.8 16.3 12.3 20.1l96 48c14.6 7.3 31.7-3.3 31.7-20.1V260.5L505.9 38.6C518.5 22.6 507.3 0 487.9 0z" />
+              </svg>
+            </button>
             <div *ngIf="filterOpen[col.field] && col.filterable" class="position-absolute bg-white border p-2 shadow-sm" style="top: 100%; right: 30%; min-width: 150px; z-index: 10">
               <!-- فیلتر متن -->
               <ng-container *ngIf="col.type === 'text'">
-                <input type="text" [value]="filters[col.field] || ''" (input)="onTextFilterChange(col.field, $any($event.target).value)" class="form-control form-control-sm" />
+                <input placeholder="{{ col.title }}" type="text" [value]="filters[col.field] || ''" (input)="onTextFilterChange(col.field, $any($event.target).value)" class="form-control form-control-sm" />
               </ng-container>
 
               <!-- فیلتر بولی -->
@@ -38,14 +42,25 @@
                 </div>
               </ng-container>
 
-              <!-- فیلتر تاریخ -->
+              <!-- فیلتر تاریخ (بازه) -->
               <ng-container *ngIf="col.type === 'date'">
                 <ng-container *ngIf="calendarType === 'miladi'">
-                  <input type="date" [value]="filters[col.field] || ''" (input)="onTextFilterChange(col.field, $any($event.target).value)" class="form-control form-control-sm py-1" />
+                  <label>از:</label>
+                  <input type="date" [value]="filters[col.field + '_from'] || ''" (input)="onDateRangeChange(col.field, 'from', $any($event.target).value)" class="form-control form-control-sm py-1 mb-1" />
+
+                  <label>تا:</label>
+                  <input type="date" [value]="filters[col.field + '_to'] || ''" (input)="onDateRangeChange(col.field, 'to', $any($event.target).value)" class="form-control form-control-sm py-1" />
                 </ng-container>
+
                 <ng-container *ngIf="calendarType === 'jalali'">
-                  <ng-persian-datepicker [timeEnable]="true" [uiHideAfterSelectDate]="true" [dateFormat]="'YYYY/MM/DD HH:mm:ss'" (dateOnSelect)="onTextFilterChange2(col.field, $any($event))">
+                  <label>از:</label>
+                  <ng-persian-datepicker [timeEnable]="false" [uiHideAfterSelectDate]="true" [dateFormat]="'YYYY/MM/DD'" (dateOnSelect)="onDateRangeChange(col.field, 'from', $any($event))">
                     <input id="expectedCompletionDatePersian" class="form-control form-control-sm py-1" [formControl]="datapicker" readonly />
+                  </ng-persian-datepicker>
+
+                  <label>تا:</label>
+                  <ng-persian-datepicker [timeEnable]="false" [uiHideAfterSelectDate]="true" [dateFormat]="'YYYY/MM/DD'" (dateOnSelect)="onDateRangeChange(col.field, 'to', $any($event))">
+                    <input id="expectedCompletionDatePersian" class="form-control form-control-sm py-1" [formControl]="datapicker2" readonly />
                   </ng-persian-datepicker>
                 </ng-container>
               </ng-container>

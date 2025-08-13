@@ -29,60 +29,43 @@ export class SharedTableComponent implements OnInit {
   filteredData: any[] = [];
   filters: { [key: string]: any } = {};
   filterOpen: { [key: string]: boolean } = {};
-  pageSize = 5;
+  pageSize = 10;
   pageIndex = 0;
   datapicker = new FormControl('');
+  datapicker2 = new FormControl('');
   @Input() calendarType: 'miladi' | 'jalali' = 'jalali';
 
   fakeData = [
-    {
-      id: '1',
-      name: 'علی',
-      active: true,
-      role: 'مدیر',
-      created: '2025-01-15',
-      gender: 'مرد',
-    },
-    {
-      id: '2',
-      name: 'زهرا',
-      active: false,
-      role: 'کاربر',
-      created: '2025-02-20',
-      gender: 'زن',
-    },
-    {
-      id: '3',
-      name: 'حسین',
-      active: true,
-      role: 'مهمان',
-      created: '2025-03-05',
-      gender: 'مرد',
-    },
-    {
-      id: '4',
-      name: 'سارا',
-      active: false,
-      role: 'کاربر',
-      created: '2025-04-10',
-      gender: 'زن',
-    },
-    {
-      id: '5',
-      name: 'محمد',
-      active: true,
-      role: 'مدیر',
-      created: '2025-05-12',
-      gender: 'مرد',
-    },
-    {
-      id: '6',
-      name: 'لیلا',
-      active: false,
-      role: 'کاربر',
-      created: '2025-06-08',
-      gender: 'زن',
-    },
+    { id: '1', name: 'علی', active: true, role: 'مدیر', created: '2025-01-15', gender: 'مرد' },
+    { id: '2', name: 'زهرا', active: false, role: 'کاربر', created: '2025-02-20', gender: 'زن' },
+    { id: '3', name: 'فرزاد', active: true, role: 'مهمان', created: '2025-03-05', gender: 'مرد' },
+    { id: '4', name: 'سارا', active: false, role: 'کاربر', created: '2025-04-10', gender: 'زن' },
+    { id: '5', name: 'محمد', active: true, role: 'مدیر', created: '2025-05-12', gender: 'مرد' },
+    { id: '6', name: 'فرزاد', active: false, role: 'کاربر', created: '2025-06-08', gender: 'مرد' },
+    { id: '7', name: 'حمید', active: true, role: 'مهمان', created: '2025-07-01', gender: 'مرد' },
+    { id: '8', name: 'مریم', active: false, role: 'مدیر', created: '2025-08-13', gender: 'زن' },
+    { id: '9', name: 'ناصر', active: true, role: 'کاربر', created: '2025-09-20', gender: 'مرد' },
+    { id: '10', name: 'نگار', active: false, role: 'مهمان', created: '2025-10-05', gender: 'زن' },
+    { id: '11', name: 'فرزاد', active: true, role: 'کاربر', created: '2025-01-01', gender: 'مرد' },
+    { id: '12', name: 'نسترن', active: false, role: 'مهمان', created: '2025-02-14', gender: 'زن' },
+    { id: '13', name: 'پیمان', active: true, role: 'مدیر', created: '2025-03-20', gender: 'مرد' },
+    { id: '14', name: 'شیرین', active: true, role: 'کاربر', created: '2025-04-11', gender: 'زن' },
+    { id: '15', name: 'کامران', active: false, role: 'مهمان', created: '2025-05-19', gender: 'مرد' },
+    { id: '16', name: 'الهام', active: true, role: 'مدیر', created: '2025-06-30', gender: 'زن' },
+    { id: '17', name: 'فرزاد', active: false, role: 'کاربر', created: '2025-07-15', gender: 'مرد' },
+    { id: '18', name: 'شبنم', active: true, role: 'مهمان', created: '2025-08-01', gender: 'زن' },
+    { id: '19', name: 'بهرام', active: false, role: 'مدیر', created: '2025-09-10', gender: 'مرد' },
+    { id: '20', name: 'یاسمین', active: true, role: 'کاربر', created: '2025-10-25', gender: 'زن' },
+    { id: '21', name: 'جواد', active: false, role: 'مهمان', created: '2025-01-22', gender: 'مرد' },
+    { id: '22', name: 'فرزانه', active: true, role: 'کاربر', created: '2025-02-28', gender: 'زن' },
+    { id: '23', name: 'کوروش', active: false, role: 'مدیر', created: '2025-03-07', gender: 'مرد' },
+    { id: '24', name: 'پریسا', active: true, role: 'کاربر', created: '2025-04-14', gender: 'زن' },
+    { id: '25', name: 'فرزاد', active: false, role: 'مهمان', created: '2025-05-29', gender: 'مرد' },
+    { id: '26', name: 'نازنین', active: true, role: 'مدیر', created: '2025-06-04', gender: 'زن' },
+    { id: '27', name: 'میلاد', active: false, role: 'کاربر', created: '2025-07-23', gender: 'مرد' },
+    { id: '28', name: 'شادی', active: true, role: 'مهمان', created: '2025-08-11', gender: 'زن' },
+    { id: '29', name: 'امیر', active: false, role: 'مدیر', created: '2025-09-02', gender: 'مرد' },
+    { id: '30', name: 'فرزاد', active: true, role: 'کاربر', created: '2025-10-10', gender: 'مرد' },
   ];
 
   constructor(private http: HttpClient) {}
@@ -177,40 +160,67 @@ export class SharedTableComponent implements OnInit {
     return `${y.toString().padStart(4, '0')}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
   }
 
-  applyAll() {
-    if (this.useApi) {
-      this.filteredData = [...this.data];
-    } else {
-      this.filteredData = this.data.filter((item) => {
-        return Object.keys(this.filters).every((field) => {
-          const filterVal = this.filters[field];
-          if (filterVal === undefined || filterVal === null || filterVal === '') return true;
-          const val = item[field];
-          if (typeof val === 'boolean') {
-            return val === (filterVal === true || filterVal === 'true');
-          } else if (typeof val === 'string' && val.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            const filterDate = this.normalizeDate(filterVal);
-            return val === filterDate;
-          } else {
-            return val?.toString().toLowerCase().includes(filterVal.toString().toLowerCase());
-          }
-        });
+applyAll() {
+  if (this.useApi) {
+    this.filteredData = [...this.data];
+  } else {
+    this.filteredData = this.data.filter((item) => {
+      return this.columns.every((col) => {
+        if (!col.filterable) return true;
+
+        const from = this.filters[col.field + '_from'];
+        const to = this.filters[col.field + '_to'];
+
+        // فیلتر بازه تاریخ
+        if (col.type === 'date' && (from || to)) {
+          const itemDate = this.normalizeDate(item[col.field]);
+          const fromDate = from ? this.normalizeDate(from) : null;
+          const toDate = to ? this.normalizeDate(to) : null;
+
+          if (fromDate && itemDate < fromDate) return false;
+          if (toDate && itemDate > toDate) return false;
+          return true;
+        }
+
+        // فیلترهای دیگر
+        const filterVal = this.filters[col.field];
+        if (filterVal === undefined || filterVal === null || filterVal === '') return true;
+        const val = item[col.field];
+        if (typeof val === 'boolean') {
+          return val === (filterVal === true || filterVal === 'true');
+        } else {
+          return val?.toString().toLowerCase().includes(filterVal.toString().toLowerCase());
+        }
       });
+    });
+  }
+  this.pageIndex = 0;
+}
+onDateRangeChange(field: string, rangeType: 'from' | 'to', value: any) {
+  let dateValue = '';
+
+  if (value) {
+    if (this.calendarType === 'jalali') {
+      dateValue = value.shamsi ? value.shamsi.split(' ')[0] : value;
+    } else {
+      dateValue = value;
     }
-    this.pageIndex = 0;
+    // مثال: created_from یا created_to
+    this.filters[`${field}_${rangeType}`] = this.normalizeDate(dateValue);
+  } else {
+    delete this.filters[`${field}_${rangeType}`];
   }
 
-  onTextFilterChange(field: string, value: string) {
-    console.log(value);
+  this.reloadDataOrFilter();
+}
 
+  onTextFilterChange(field: string, value: string) {
     if (value) this.filters[field] = value;
     else delete this.filters[field];
     this.reloadDataOrFilter();
   }
 
   onTextFilterChange2(field: string, value: any) {
-    console.log(value.shamsi.split(' ')[0]);
-
     if (value) this.filters[field] = value.shamsi.split(' ')[0];
     else delete this.filters[field];
     this.reloadDataOrFilter();
