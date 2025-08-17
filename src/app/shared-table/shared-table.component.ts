@@ -31,8 +31,8 @@ export class SharedTableComponent implements OnInit {
   filterOpen: { [key: string]: boolean } = {};
   pageSize = 10;
   pageIndex = 0;
-  datapicker = new FormControl('');
-  datapicker2 = new FormControl('');
+  datapicker = new FormControl(new Date());
+  datapicker2 = new FormControl(new Date());
   @Input() calendarType: 'miladi' | 'jalali' = 'jalali';
 
   fakeData = [
@@ -197,6 +197,8 @@ applyAll() {
   this.pageIndex = 0;
 }
 onDateRangeChange(field: string, rangeType: 'from' | 'to', value: any) {
+    console.log('Selected date:', value);
+
   let dateValue = '';
 
   if (value) {
@@ -205,14 +207,18 @@ onDateRangeChange(field: string, rangeType: 'from' | 'to', value: any) {
     } else {
       dateValue = value;
     }
-    // مثال: created_from یا created_to
     this.filters[`${field}_${rangeType}`] = this.normalizeDate(dateValue);
   } else {
     delete this.filters[`${field}_${rangeType}`];
   }
 
-  this.reloadDataOrFilter();
+  if (this.filters[`${field}_from`] && this.filters[`${field}_to`]) {
+    this.reloadDataOrFilter();
+  } else if (!this.filters[`${field}_from`] && !this.filters[`${field}_to`]) {
+    this.reloadDataOrFilter();
+  }
 }
+
 
   onTextFilterChange(field: string, value: string) {
     if (value) this.filters[field] = value;
@@ -257,9 +263,17 @@ onDateRangeChange(field: string, rangeType: 'from' | 'to', value: any) {
   }
 
   clearFilter(field: string) {
-    delete this.filters[field];
-    this.reloadDataOrFilter();
+  delete this.filters[`${field}_from`];
+  delete this.filters[`${field}_to`];
+  delete this.filters[field];
+
+  if (field === 'created') {
+    this.datapicker.reset();
+    this.datapicker2.reset();
   }
+  this.reloadDataOrFilter();
+  }
+
 
   nextPage() {
     if ((this.pageIndex + 1) * this.pageSize < this.filteredData.length) {

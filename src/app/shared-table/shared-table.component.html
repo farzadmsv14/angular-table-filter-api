@@ -5,13 +5,19 @@
         <tr>
           <th *ngFor="let col of columns" class="position-relative user-select-none text-center" style="cursor: pointer">
             {{ col.title }}
-            <button *ngIf="col.filterable" (click)="toggleFilter(col.field)" class="btn btn-sm btn-outline-secondary ms-1 border-0">
-              <svg width="14" height="14" fill="currentColor" viewBox="0 0 512 512">
-                <path d="M487.9 0H24.1C4.7 0-6.5 22.6 6.1 38.6l176.3 221.9V464c0 8.5 4.8 16.3 12.3 20.1l96 48c14.6 7.3 31.7-3.3 31.7-20.1V260.5L505.9 38.6C518.5 22.6 507.3 0 487.9 0z" />
+            <button *ngIf="col.filterable" (click)="toggleFilter(col.field)" class="btn btn-light border-0" style="padding: 0 !important ; --bs-btn-hover-bg: inherit; --bs-btn-hover-color: rgb(165, 161, 161); text-decoration: none">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 4h14M6 4l6 7v6l2 2v-8l3-4" />
+                <path d="M19 15v6M16 18h6" />
               </svg>
             </button>
             <div *ngIf="filterOpen[col.field] && col.filterable" class="position-absolute bg-white border p-2 shadow-sm" style="top: 100%; right: 30%; min-width: 150px; z-index: 10">
               <!-- فیلتر متن -->
+
+              <div>
+                <p>فیلنر بر اساس : {{ col.title }}</p>
+              </div>
+
               <ng-container *ngIf="col.type === 'text'">
                 <input placeholder="{{ col.title }}" type="text" [value]="filters[col.field] || ''" (input)="onTextFilterChange(col.field, $any($event.target).value)" class="form-control form-control-sm" />
               </ng-container>
