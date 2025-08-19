@@ -23,6 +23,7 @@
     "ng-persian-datepicker": "^10.0.0",
     "rxjs": "~7.8.0",
     "shared-table": "file:dist/shared-table",
+    "shared-table-filters": "^0.0.5",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
   },

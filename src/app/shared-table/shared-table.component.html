@@ -100,7 +100,8 @@
               </ng-container>
 
               <ng-container *ngSwitchCase="'date'">
-                {{ calendarType === 'jalali' ? toJalali(row[col.field]) : row[col.field] }}
+                <!-- {{ calendarType === 'jalali' ? toJalali(row[col.field]) : row[col.field] }} -->
+                {{ row[col.field] }}
               </ng-container>
 
               <ng-container *ngSwitchDefault>
@@ -118,10 +119,10 @@
 
   <!-- پیمایش صفحه -->
   <div class="mt-4 d-flex justify-content-center align-items-center gap-3">
-    <button (click)="prevPage()" [disabled]="pageIndex === 0" class="btn btn-outline-dark rounded-pill px-3 shadow-sm fw-bold"> قبلی</button>
+    <button (click)="prevPage()" [disabled]="pageIndex === 0" class="btn btn-outline-dark rounded-pill px-3 shadow-sm fw-bold">قبلی</button>
 
-    <span class="fw-bold text-dark  px-3 py-2 rounded"> صفحه {{ pageIndex + 1 }} از {{ ceil(filteredData.length / pageSize) }} </span>
+    <span class="fw-bold text-dark px-3 py-2 rounded"> صفحه {{ pageIndex + 1 }} از {{ ceil(filteredData.length / pageSize) }} </span>
 
-    <button (click)="nextPage()" [disabled]="(pageIndex + 1) * pageSize >= filteredData.length" class="btn btn-outline-dark rounded-pill px-3 shadow-sm fw-bold">بعدی </button>
+    <button (click)="nextPage()" [disabled]="(pageIndex + 1) * pageSize >= filteredData.length" class="btn btn-outline-dark rounded-pill px-3 shadow-sm fw-bold">بعدی</button>
   </div>
 </div>

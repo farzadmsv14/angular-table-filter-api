@@ -111,7 +111,58 @@ export class SharedTableComponent implements OnInit {
   }
 
   isValidDate(value: any): boolean {
-    return !isNaN(Date.parse(value));
+    if (typeof value !== 'string') return false;
+
+    // ۱. تبدیل اعداد فارسی به انگلیسی
+    const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    value = value.replace(/[۰-۹]/g, (d) => persianDigits.indexOf(d).toString());
+
+    // ۲. حذف فاصله‌های اضافی
+    value = value.trim();
+
+    // ۳. الگوهای مختلف تاریخ
+    const formats = [
+      { regex: /^\d{4}[-/]\d{2}[-/]\d{2}$/, format: 'YMD' }, // YYYY-MM-DD یا YYYY/MM/DD
+      { regex: /^\d{2}[-/]\d{2}[-/]\d{4}$/, format: 'DMY' }, // DD-MM-YYYY یا DD/MM/YYYY
+    ];
+
+    for (const { regex, format } of formats) {
+      if (regex.test(value)) {
+        const parts = value.split(/[-/]/).map(Number);
+
+        let year, month, day;
+        if (format === 'YMD') {
+          [year, month, day] = parts;
+        } else {
+          [day, month, year] = parts;
+        }
+
+        // بررسی اعتبار تاریخ میلادی
+        const date = new Date(year, month - 1, day);
+        if (date.getFullYear() === year && date.getMonth() + 1 === month && date.getDate() === day) {
+          return true;
+        }
+
+        if (year >= 1200 && year <= 1500) {
+          return this.isValidJalaliDate(year, month, day);
+        }
+      }
+    }
+
+    return false;
+  }
+
+  isValidJalaliDate(year: number, month: number, day: number): boolean {
+    const isLeap = (year: number) => {
+      const a = year - (year > 979 ? 979 : 0);
+      const b = a % 33;
+      return [1, 5, 9, 13, 17, 22, 26, 30].includes(b);
+    };
+
+    if (month < 1 || month > 12) return false;
+
+    const maxDays = month <= 6 ? 31 : month <= 11 ? 30 : isLeap(year) ? 30 : 29;
+    return day >= 1 && day <= maxDays;
   }
 
   constructor(private http: HttpClient) {}

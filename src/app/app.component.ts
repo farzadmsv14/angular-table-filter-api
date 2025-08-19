@@ -1,8 +1,7 @@
-import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
 import { SharedTableComponent } from './shared-table/shared-table.component';
-// import { SharedTableComponent } from 'shared-table';
+// import { SharedTableComponent } from 'shared-table-filters'; 
+
 
 export interface ColumnConfig {
   id: string;
