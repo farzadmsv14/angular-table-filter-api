@@ -4,7 +4,13 @@
       <thead class="table-light">
         <tr>
           <th *ngFor="let col of columns" class="position-relative user-select-none text-center">
-            {{ col.title }}
+            <span (click)="sortData(col.field)" style="cursor: pointer">
+              {{ col.title }}
+              <span *ngIf="sortField === col.field">
+                <ng-container *ngIf="sortDirection === 'asc'">▲</ng-container>
+                <ng-container *ngIf="sortDirection === 'desc'">▼</ng-container>
+              </span>
+            </span>
             <button *ngIf="col.filterable" (click)="toggleFilter(col.field)" class="btn btn-light border-0" style="padding: 0 !important ; --bs-btn-hover-bg: inherit; --bs-btn-hover-color: rgb(165, 161, 161); text-decoration: none">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 4h14M6 4l6 7v6l2 2v-8l3-4" />
@@ -111,9 +117,11 @@
   </div>
 
   <!-- پیمایش صفحه -->
-  <div class="mt-3 text-center">
-    <button (click)="prevPage()" [disabled]="pageIndex === 0" class="btn btn-sm btn-primary me-2">قبلی</button>
-    صفحه {{ pageIndex + 1 }} از {{ ceil(filteredData.length / pageSize) }}
-    <button (click)="nextPage()" [disabled]="(pageIndex + 1) * pageSize >= filteredData.length" class="btn btn-sm btn-primary ms-2">بعدی</button>
+  <div class="mt-4 d-flex justify-content-center align-items-center gap-3">
+    <button (click)="prevPage()" [disabled]="pageIndex === 0" class="btn btn-outline-dark rounded-pill px-3 shadow-sm fw-bold"> قبلی</button>
+
+    <span class="fw-bold text-dark  px-3 py-2 rounded"> صفحه {{ pageIndex + 1 }} از {{ ceil(filteredData.length / pageSize) }} </span>
+
+    <button (click)="nextPage()" [disabled]="(pageIndex + 1) * pageSize >= filteredData.length" class="btn btn-outline-dark rounded-pill px-3 shadow-sm fw-bold">بعدی </button>
   </div>
 </div>

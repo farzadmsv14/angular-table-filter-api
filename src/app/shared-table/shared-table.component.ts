@@ -208,10 +208,31 @@ export class SharedTableComponent implements OnInit {
     return `${y.toString().padStart(4, '0')}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
   }
 
+  sortField: string | null = null;
+  sortDirection: 'asc' | 'desc' | null = null;
+
+  sortData(field: string) {
+    if (this.sortField === field) {
+      if (this.sortDirection === 'asc') {
+        this.sortDirection = 'desc';
+      } else if (this.sortDirection === 'desc') {
+        // 🔸 حالت سوم → حذف مرتب‌سازی
+        this.sortField = null;
+        this.sortDirection = null;
+      } else {
+        this.sortDirection = 'asc';
+      }
+    } else {
+      this.sortField = field;
+      this.sortDirection = 'asc';
+    }
+
+    this.applyAll();
+  }
+
   applyAll() {
     if (this.useApi) {
       this.columns = this.generateColumns(this.data);
-
       this.filteredData = [...this.data];
     } else {
       this.filteredData = this.data.filter((item) => {
@@ -221,7 +242,6 @@ export class SharedTableComponent implements OnInit {
           const from = this.filters[col.field + '_from'];
           const to = this.filters[col.field + '_to'];
 
-          // فیلتر بازه تاریخ
           if (col.type === 'date' && (from || to)) {
             const itemDate = this.normalizeDate(item[col.field]);
             const fromDate = from ? this.normalizeDate(from) : null;
@@ -232,7 +252,6 @@ export class SharedTableComponent implements OnInit {
             return true;
           }
 
-          // فیلترهای دیگر
           const filterVal = this.filters[col.field];
           if (filterVal === undefined || filterVal === null || filterVal === '') return true;
           const val = item[col.field];
@@ -244,8 +263,35 @@ export class SharedTableComponent implements OnInit {
         });
       });
     }
+
+    if (this.sortField && this.sortDirection) {
+      this.filteredData.sort((a, b) => {
+        let valA: any = a[this.sortField!];
+        let valB: any = b[this.sortField!];
+
+        if (valA == null) return 1;
+        if (valB == null) return -1;
+
+        if (this.columns.find((c) => c.field === this.sortField)?.type === 'date') {
+          valA = this.normalizeDate(valA);
+          valB = this.normalizeDate(valB);
+        }
+
+        if (!isNaN(valA) && !isNaN(valB)) {
+          return this.sortDirection === 'asc' ? Number(valA) - Number(valB) : Number(valB) - Number(valA);
+        }
+
+        if (typeof valA === 'string' && typeof valB === 'string') {
+          return this.sortDirection === 'asc' ? valA.localeCompare(valB, 'fa') : valB.localeCompare(valA, 'fa');
+        }
+
+        return this.sortDirection === 'asc' ? (valA > valB ? 1 : -1) : valA < valB ? 1 : -1;
+      });
+    }
+
     this.pageIndex = 0;
   }
+
   onDateRangeChange(field: string, rangeType: 'from' | 'to', value: any) {
     console.log('Selected date:', value);
 

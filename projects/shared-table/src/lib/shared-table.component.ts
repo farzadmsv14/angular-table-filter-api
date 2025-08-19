@@ -14,8 +14,8 @@ export interface ColumnConfig {
 }
 
 @Component({
-  selector: 'lib-shared-table', // تغییر نام selector برای کتابخانه
-  standalone: true, // چون داخل کتابخانه میخوای مستقل باشه
+  selector: 'lib-shared-table', 
+  standalone: true, 
   imports: [CommonModule, FormsModule, ReactiveFormsModule, HttpClientModule, NgPersianDatepickerModule],
   template: `
     <div class="card-body" dir="rtl">
@@ -23,13 +23,29 @@ export interface ColumnConfig {
         <table class="table align-middle dt-responsive nowrap w-100 table-check">
           <thead class="table-light">
             <tr>
-              <th *ngFor="let col of columns" class="position-relative user-select-none text-center" style="cursor: pointer">
-                {{ col.title }}
-                <button *ngIf="col.filterable" (click)="toggleFilter(col.field)" class="btn btn-sm btn-outline-secondary ms-1 border-0">فیلتر</button>
+              <th *ngFor="let col of columns" class="position-relative user-select-none text-center">
+                <span (click)="sortData(col.field)" style="cursor: pointer">
+                  {{ col.title }}
+                  <span *ngIf="sortField === col.field">
+                    <ng-container *ngIf="sortDirection === 'asc'">▲</ng-container>
+                    <ng-container *ngIf="sortDirection === 'desc'">▼</ng-container>
+                  </span>
+                </span>
+                <button *ngIf="col.filterable" (click)="toggleFilter(col.field)" class="btn btn-light border-0" style="padding: 0 !important ; --bs-btn-hover-bg: inherit; --bs-btn-hover-color: rgb(165, 161, 161); text-decoration: none">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 4h14M6 4l6 7v6l2 2v-8l3-4" />
+                    <path d="M19 15v6M16 18h6" />
+                  </svg>
+                </button>
                 <div *ngIf="filterOpen[col.field] && col.filterable" class="position-absolute bg-white border p-2 shadow-sm" style="top: 100%; right: 30%; min-width: 150px; z-index: 10">
                   <!-- فیلتر متن -->
-                  <ng-container *ngIf="col.type === 'text'">
-                    <input type="text" [value]="filters[col.field] || ''" (input)="onTextFilterChange(col.field, $any($event.target).value)" class="form-control form-control-sm" />
+
+                  <div>
+                    <p>فیلنر بر اساس : {{ col.title }}</p>
+                  </div>
+
+                  <ng-container *ngIf="col.type === 'string'">
+                    <input placeholder="{{ col.title }}" type="text" [value]="filters[col.field] || ''" (input)="onTextFilterChange(col.field, $any($event.target).value)" class="form-control form-control-sm" />
                   </ng-container>
 
                   <!-- فیلتر بولی -->
@@ -58,14 +74,25 @@ export interface ColumnConfig {
                     </div>
                   </ng-container>
 
-                  <!-- فیلتر تاریخ -->
+                  <!-- فیلتر تاریخ (بازه) -->
                   <ng-container *ngIf="col.type === 'date'">
                     <ng-container *ngIf="calendarType === 'miladi'">
-                      <input type="date" [value]="filters[col.field] || ''" (input)="onTextFilterChange(col.field, $any($event.target).value)" class="form-control form-control-sm py-1" />
+                      <label>از:</label>
+                      <input type="date" [value]="filters[col.field + '_from'] || ''" (input)="onDateRangeChange(col.field, 'from', $any($event.target).value)" class="form-control form-control-sm py-1 mb-1" />
+
+                      <label>تا:</label>
+                      <input type="date" [value]="filters[col.field + '_to'] || ''" (input)="onDateRangeChange(col.field, 'to', $any($event.target).value)" class="form-control form-control-sm py-1" />
                     </ng-container>
+
                     <ng-container *ngIf="calendarType === 'jalali'">
-                      <ng-persian-datepicker [timeEnable]="true" [uiHideAfterSelectDate]="true" [dateFormat]="'YYYY/MM/DD HH:mm:ss'" (dateOnSelect)="onTextFilterChange2(col.field, $any($event))">
+                      <label>از:</label>
+                      <ng-persian-datepicker id="jalali" [timeEnable]="false" [uiHideAfterSelectDate]="true" [dateFormat]="'YYYY/MM/DD'" (dateOnSelect)="onDateRangeChange(col.field, 'from', $any($event))">
                         <input id="expectedCompletionDatePersian" class="form-control form-control-sm py-1" [formControl]="datapicker" readonly />
+                      </ng-persian-datepicker>
+
+                      <label>تا:</label>
+                      <ng-persian-datepicker [timeEnable]="false" [uiHideAfterSelectDate]="true" [dateFormat]="'YYYY/MM/DD'" (dateOnSelect)="onDateRangeChange(col.field, 'to', $any($event))">
+                        <input id="expectedCompletionDatePersian" class="form-control form-control-sm py-1" [formControl]="datapicker2" readonly />
                       </ng-persian-datepicker>
                     </ng-container>
                   </ng-container>
@@ -110,17 +137,24 @@ export interface ColumnConfig {
       </div>
 
       <!-- پیمایش صفحه -->
-      <div class="mt-3 text-center">
-        <button (click)="prevPage()" [disabled]="pageIndex === 0" class="btn btn-sm btn-primary me-2">قبلی</button>
-        صفحه {{ pageIndex + 1 }} از {{ ceil(filteredData.length / pageSize) }}
-        <button (click)="nextPage()" [disabled]="(pageIndex + 1) * pageSize >= filteredData.length" class="btn btn-sm btn-primary ms-2">بعدی</button>
+      <div class="mt-4 d-flex justify-content-center align-items-center gap-3">
+        <button (click)="prevPage()" [disabled]="pageIndex === 0" class="btn btn-outline-dark rounded-pill px-3 shadow-sm fw-bold">قبلی</button>
+
+        <span class="fw-bold text-dark  px-3 py-2 rounded"> صفحه {{ pageIndex + 1 }} از {{ ceil(filteredData.length / pageSize) }} </span>
+
+        <button (click)="nextPage()" [disabled]="(pageIndex + 1) * pageSize >= filteredData.length" class="btn btn-outline-dark rounded-pill px-3 shadow-sm fw-bold">بعدی</button>
       </div>
     </div>
   `,
-  styles: ``,
+  styles: `
+  ::ng-deep .datepicker-outer-container {
+  position: absolute;
+}
+
+  `,
 })
 export class SharedTableComponent implements OnInit {
-  @Input() columns: ColumnConfig[] = [];
+  columns: any[] = [];
   @Input() useApi = false;
   @Input() apiUrl = '';
 
@@ -128,66 +162,97 @@ export class SharedTableComponent implements OnInit {
   filteredData: any[] = [];
   filters: { [key: string]: any } = {};
   filterOpen: { [key: string]: boolean } = {};
-  pageSize = 5;
+  pageSize = 10;
   pageIndex = 0;
-  datapicker = new FormControl('');
+  datapicker = new FormControl(new Date());
+  datapicker2 = new FormControl(new Date());
   @Input() calendarType: 'miladi' | 'jalali' = 'jalali';
 
   fakeData = [
-    {
-      id: '1',
-      name: 'علی',
-      active: true,
-      role: 'مدیر',
-      created: '2025-01-15',
-      gender: 'مرد',
-    },
-    {
-      id: '2',
-      name: 'زهرا',
-      active: false,
-      role: 'کاربر',
-      created: '2025-02-20',
-      gender: 'زن',
-    },
-    {
-      id: '3',
-      name: 'حسین',
-      active: true,
-      role: 'مهمان',
-      created: '2025-03-05',
-      gender: 'مرد',
-    },
-    {
-      id: '4',
-      name: 'سارا',
-      active: false,
-      role: 'کاربر',
-      created: '2025-04-10',
-      gender: 'زن',
-    },
-    {
-      id: '5',
-      name: 'محمد',
-      active: true,
-      role: 'مدیر',
-      created: '2025-05-12',
-      gender: 'مرد',
-    },
-    {
-      id: '6',
-      name: 'لیلا',
-      active: false,
-      role: 'کاربر',
-      created: '2025-06-08',
-      gender: 'زن',
-    },
+    { id: '1', name: 'علی', active: true, role: 'مدیر', created: '2025-01-15', gender: 'مرد' },
+    { id: '2', name: 'زهرا', active: false, role: 'کاربر', created: '2025-02-20', gender: 'زن' },
+    { id: '3', name: 'فرزاد', active: true, role: 'مهمان', created: '2025-03-05', gender: 'مرد' },
+    { id: '4', name: 'سارا', active: false, role: 'کاربر', created: '2025-04-10', gender: 'زن' },
+    { id: '5', name: 'محمد', active: true, role: 'مدیر', created: '2025-05-12', gender: 'مرد' },
+    { id: '6', name: 'فرزاد', active: false, role: 'کاربر', created: '2025-06-08', gender: 'مرد' },
+    { id: '7', name: 'حمید', active: true, role: 'مهمان', created: '2025-07-01', gender: 'مرد' },
+    { id: '8', name: 'مریم', active: false, role: 'مدیر', created: '2025-08-13', gender: 'زن' },
+    { id: '9', name: 'ناصر', active: true, role: 'کاربر', created: '2025-09-20', gender: 'مرد' },
+    { id: '10', name: 'نگار', active: false, role: 'مهمان', created: '2025-10-05', gender: 'زن' },
+    { id: '11', name: 'فرزاد', active: true, role: 'کاربر', created: '2025-01-01', gender: 'مرد' },
+    { id: '12', name: 'نسترن', active: false, role: 'مهمان', created: '2025-02-14', gender: 'زن' },
+    { id: '13', name: 'پیمان', active: true, role: 'مدیر', created: '2025-03-20', gender: 'مرد' },
+    { id: '14', name: 'شیرین', active: true, role: 'کاربر', created: '2025-04-11', gender: 'زن' },
+    { id: '15', name: 'کامران', active: false, role: 'مهمان', created: '2025-05-19', gender: 'مرد' },
+    { id: '16', name: 'الهام', active: true, role: 'مدیر', created: '2025-06-30', gender: 'زن' },
+    { id: '17', name: 'فرزاد', active: false, role: 'کاربر', created: '2025-07-15', gender: 'مرد' },
+    { id: '18', name: 'شبنم', active: true, role: 'مهمان', created: '2025-08-01', gender: 'زن' },
+    { id: '19', name: 'بهرام', active: false, role: 'مدیر', created: '2025-09-10', gender: 'مرد' },
+    { id: '20', name: 'یاسمین', active: true, role: 'کاربر', created: '2025-10-25', gender: 'زن' },
+    { id: '21', name: 'جواد', active: false, role: 'مهمان', created: '2025-01-22', gender: 'مرد' },
+    { id: '22', name: 'فرزانه', active: true, role: 'کاربر', created: '2025-02-28', gender: 'زن' },
+    { id: '23', name: 'کوروش', active: false, role: 'مدیر', created: '2025-03-07', gender: 'مرد' },
+    { id: '24', name: 'پریسا', active: true, role: 'کاربر', created: '2025-04-14', gender: 'زن' },
+    { id: '25', name: 'فرزاد', active: false, role: 'مهمان', created: '2025-05-29', gender: 'مرد' },
+    { id: '26', name: 'نازنین', active: true, role: 'مدیر', created: '2025-06-04', gender: 'زن' },
+    { id: '27', name: 'میلاد', active: false, role: 'کاربر', created: '2025-07-23', gender: 'مرد' },
+    { id: '28', name: 'شادی', active: true, role: 'مهمان', created: '2025-08-11', gender: 'زن' },
+    { id: '29', name: 'امیر', active: false, role: 'مدیر', created: '2025-09-02', gender: 'مرد' },
+    { id: '30', name: 'فرزاد', active: true, role: 'کاربر', created: '2025-10-10', gender: 'مرد' },
   ];
+
+  generateColumns(data: any[]): any[] {
+    if (!data || data.length === 0) return [];
+
+    const sample = data[0];
+    const columns: any[] = [];
+
+    for (const key of Object.keys(sample)) {
+      const values = data.map((d) => d[key]);
+      const uniqueValues = Array.from(new Set(values));
+
+      let type: string = 'text';
+
+      if (key === 'id') {
+        type = 'string';
+      } else if (typeof sample[key] === 'boolean') {
+        type = 'boolean';
+      } else if (this.isValidDate(sample[key])) {
+        type = 'date';
+      } else if (uniqueValues.length === 2) {
+        type = 'radio';
+      } else if (uniqueValues.length > 2 && uniqueValues.length <= 10) {
+        type = 'select';
+      } else if (!this.isValidDate(sample[key])) {
+        type = 'string';
+      }
+
+      const column: any = {
+        field: key,
+        title: key,
+        type: type,
+        filterable: key !== 'id',
+      };
+
+      if (type === 'select' || type === 'radio') {
+        column.options = uniqueValues;
+      }
+
+      columns.push(column);
+    }
+    return columns;
+  }
+
+  isValidDate(value: any): boolean {
+    return !isNaN(Date.parse(value));
+  }
 
   constructor(private http: HttpClient) {}
 
   ngOnInit() {
+    this.columns = this.generateColumns(this.fakeData);
     this.loadData();
+    console.log(this.columns);
   }
 
   loadData() {
@@ -276,40 +341,120 @@ export class SharedTableComponent implements OnInit {
     return `${y.toString().padStart(4, '0')}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
   }
 
+  sortField: string | null = null;
+  sortDirection: 'asc' | 'desc' | null = null;
+
+  sortData(field: string) {
+    if (this.sortField === field) {
+      if (this.sortDirection === 'asc') {
+        this.sortDirection = 'desc';
+      } else if (this.sortDirection === 'desc') {
+        // 🔸 حالت سوم → حذف مرتب‌سازی
+        this.sortField = null;
+        this.sortDirection = null;
+      } else {
+        this.sortDirection = 'asc';
+      }
+    } else {
+      this.sortField = field;
+      this.sortDirection = 'asc';
+    }
+
+    this.applyAll();
+  }
+
   applyAll() {
     if (this.useApi) {
+      this.columns = this.generateColumns(this.data);
       this.filteredData = [...this.data];
     } else {
       this.filteredData = this.data.filter((item) => {
-        return Object.keys(this.filters).every((field) => {
-          const filterVal = this.filters[field];
+        return this.columns.every((col) => {
+          if (!col.filterable) return true;
+
+          const from = this.filters[col.field + '_from'];
+          const to = this.filters[col.field + '_to'];
+
+          if (col.type === 'date' && (from || to)) {
+            const itemDate = this.normalizeDate(item[col.field]);
+            const fromDate = from ? this.normalizeDate(from) : null;
+            const toDate = to ? this.normalizeDate(to) : null;
+
+            if (fromDate && itemDate < fromDate) return false;
+            if (toDate && itemDate > toDate) return false;
+            return true;
+          }
+
+          const filterVal = this.filters[col.field];
           if (filterVal === undefined || filterVal === null || filterVal === '') return true;
-          const val = item[field];
+          const val = item[col.field];
           if (typeof val === 'boolean') {
             return val === (filterVal === true || filterVal === 'true');
-          } else if (typeof val === 'string' && val.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            const filterDate = this.normalizeDate(filterVal);
-            return val === filterDate;
           } else {
             return val?.toString().toLowerCase().includes(filterVal.toString().toLowerCase());
           }
         });
       });
     }
+
+    if (this.sortField && this.sortDirection) {
+      this.filteredData.sort((a, b) => {
+        let valA: any = a[this.sortField!];
+        let valB: any = b[this.sortField!];
+
+        if (valA == null) return 1;
+        if (valB == null) return -1;
+
+        if (this.columns.find((c) => c.field === this.sortField)?.type === 'date') {
+          valA = this.normalizeDate(valA);
+          valB = this.normalizeDate(valB);
+        }
+
+        if (!isNaN(valA) && !isNaN(valB)) {
+          return this.sortDirection === 'asc' ? Number(valA) - Number(valB) : Number(valB) - Number(valA);
+        }
+
+        if (typeof valA === 'string' && typeof valB === 'string') {
+          return this.sortDirection === 'asc' ? valA.localeCompare(valB, 'fa') : valB.localeCompare(valA, 'fa');
+        }
+
+        return this.sortDirection === 'asc' ? (valA > valB ? 1 : -1) : valA < valB ? 1 : -1;
+      });
+    }
+
     this.pageIndex = 0;
   }
 
-  onTextFilterChange(field: string, value: string) {
-    console.log(value);
+  onDateRangeChange(field: string, rangeType: 'from' | 'to', value: any) {
+    console.log('Selected date:', value);
 
+    let dateValue = '';
+
+    if (value) {
+      if (this.calendarType === 'jalali') {
+        dateValue = value.shamsi ? value.shamsi.split(' ')[0] : value;
+      } else {
+        dateValue = value;
+      }
+      this.filters[`${field}_${rangeType}`] = this.normalizeDate(dateValue);
+    } else {
+      delete this.filters[`${field}_${rangeType}`];
+    }
+
+    if (this.filters[`${field}_from`] && this.filters[`${field}_to`]) {
+      this.reloadDataOrFilter();
+    } else if (!this.filters[`${field}_from`] && !this.filters[`${field}_to`]) {
+      this.reloadDataOrFilter();
+    }
+  }
+
+  onTextFilterChange(field: string, value: string) {
     if (value) this.filters[field] = value;
     else delete this.filters[field];
     this.reloadDataOrFilter();
   }
 
   onTextFilterChange2(field: string, value: any) {
-    console.log(value.shamsi.split(' ')[0]);
-
     if (value) this.filters[field] = value.shamsi.split(' ')[0];
     else delete this.filters[field];
     this.reloadDataOrFilter();
@@ -346,7 +491,14 @@ export class SharedTableComponent implements OnInit {
   }
 
   clearFilter(field: string) {
+    delete this.filters[`${field}_from`];
+    delete this.filters[`${field}_to`];
     delete this.filters[field];
+
+    if (field === 'created') {
+      this.datapicker.reset();
+      this.datapicker2.reset();
+    }
     this.reloadDataOrFilter();
   }
 
@@ -385,8 +537,21 @@ export class SharedTableComponent implements OnInit {
 
   toJalali(gregDateStr: string): string {
     if (!gregDateStr) return '';
-    const [y, m, d] = gregDateStr.split('-').map(Number);
-    const { jy, jm, jd } = jalaali.toJalaali(y, m, d);
-    return `${jy}/${jm.toString().padStart(2, '0')}/${jd.toString().padStart(2, '0')}`;
+
+    const parts = gregDateStr.split('-').map(Number);
+    if (parts.length !== 3) return '';
+
+    let [y, m, d] = parts;
+
+    if (!y || !m || !d) return '';
+    if (m < 1 || m > 12 || d < 1 || d > 31) return '';
+
+    try {
+      const { jy, jm, jd } = jalaali.toJalaali(y, m, d);
+      return `${jy}/${jm.toString().padStart(2, '0')}/${jd.toString().padStart(2, '0')}`;
+    } catch (e) {
+      console.warn('خطای تبدیل به جلالی:', gregDateStr, e);
+      return '';
+    }
   }
 }
