@@ -3,7 +3,7 @@
     <table class="table align-middle dt-responsive nowrap w-100 table-check">
       <thead class="table-light">
         <tr>
-          <th *ngFor="let col of columns" class="position-relative user-select-none text-center" style="cursor: pointer">
+          <th *ngFor="let col of columns" class="position-relative user-select-none text-center">
             {{ col.title }}
             <button *ngIf="col.filterable" (click)="toggleFilter(col.field)" class="btn btn-light border-0" style="padding: 0 !important ; --bs-btn-hover-bg: inherit; --bs-btn-hover-color: rgb(165, 161, 161); text-decoration: none">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -18,7 +18,7 @@
                 <p>فیلنر بر اساس : {{ col.title }}</p>
               </div>
 
-              <ng-container *ngIf="col.type === 'text'">
+              <ng-container *ngIf="col.type === 'string'">
                 <input placeholder="{{ col.title }}" type="text" [value]="filters[col.field] || ''" (input)="onTextFilterChange(col.field, $any($event.target).value)" class="form-control form-control-sm" />
               </ng-container>
 
@@ -60,7 +60,7 @@
 
                 <ng-container *ngIf="calendarType === 'jalali'">
                   <label>از:</label>
-                  <ng-persian-datepicker [timeEnable]="false" [uiHideAfterSelectDate]="true" [dateFormat]="'YYYY/MM/DD'" (dateOnSelect)="onDateRangeChange(col.field, 'from', $any($event))">
+                  <ng-persian-datepicker id="jalali" [timeEnable]="false" [uiHideAfterSelectDate]="true" [dateFormat]="'YYYY/MM/DD'" (dateOnSelect)="onDateRangeChange(col.field, 'from', $any($event))">
                     <input id="expectedCompletionDatePersian" class="form-control form-control-sm py-1" [formControl]="datapicker" readonly />
                   </ng-persian-datepicker>
 

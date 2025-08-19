@@ -21,7 +21,7 @@ export interface ColumnConfig {
   styleUrls: ['./shared-table.component.css'],
 })
 export class SharedTableComponent implements OnInit {
-  @Input() columns: ColumnConfig[] = [];
+  columns: any[] = [];
   @Input() useApi = false;
   @Input() apiUrl = '';
 
@@ -68,10 +68,58 @@ export class SharedTableComponent implements OnInit {
     { id: '30', name: 'فرزاد', active: true, role: 'کاربر', created: '2025-10-10', gender: 'مرد' },
   ];
 
+  generateColumns(data: any[]): any[] {
+    if (!data || data.length === 0) return [];
+
+    const sample = data[0];
+    const columns: any[] = [];
+
+    for (const key of Object.keys(sample)) {
+      const values = data.map((d) => d[key]);
+      const uniqueValues = Array.from(new Set(values));
+
+      let type: string = 'text';
+
+      if (key === 'id') {
+        type = 'string';
+      } else if (typeof sample[key] === 'boolean') {
+        type = 'boolean';
+      } else if (this.isValidDate(sample[key])) {
+        type = 'date';
+      } else if (uniqueValues.length === 2) {
+        type = 'radio';
+      } else if (uniqueValues.length > 2 && uniqueValues.length <= 10) {
+        type = 'select';
+      } else if (!this.isValidDate(sample[key])) {
+        type = 'string';
+      }
+
+      const column: any = {
+        field: key,
+        title: key,
+        type: type,
+        filterable: key !== 'id',
+      };
+
+      if (type === 'select' || type === 'radio') {
+        column.options = uniqueValues;
+      }
+
+      columns.push(column);
+    }
+    return columns;
+  }
+
+  isValidDate(value: any): boolean {
+    return !isNaN(Date.parse(value));
+  }
+
   constructor(private http: HttpClient) {}
 
   ngOnInit() {
+    this.columns = this.generateColumns(this.fakeData);
     this.loadData();
+    console.log(this.columns);
   }
 
   loadData() {
@@ -160,65 +208,66 @@ export class SharedTableComponent implements OnInit {
     return `${y.toString().padStart(4, '0')}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
   }
 
-applyAll() {
-  if (this.useApi) {
-    this.filteredData = [...this.data];
-  } else {
-    this.filteredData = this.data.filter((item) => {
-      return this.columns.every((col) => {
-        if (!col.filterable) return true;
+  applyAll() {
+    if (this.useApi) {
+      this.columns = this.generateColumns(this.data);
 
-        const from = this.filters[col.field + '_from'];
-        const to = this.filters[col.field + '_to'];
+      this.filteredData = [...this.data];
+    } else {
+      this.filteredData = this.data.filter((item) => {
+        return this.columns.every((col) => {
+          if (!col.filterable) return true;
 
-        // فیلتر بازه تاریخ
-        if (col.type === 'date' && (from || to)) {
-          const itemDate = this.normalizeDate(item[col.field]);
-          const fromDate = from ? this.normalizeDate(from) : null;
-          const toDate = to ? this.normalizeDate(to) : null;
+          const from = this.filters[col.field + '_from'];
+          const to = this.filters[col.field + '_to'];
 
-          if (fromDate && itemDate < fromDate) return false;
-          if (toDate && itemDate > toDate) return false;
-          return true;
-        }
+          // فیلتر بازه تاریخ
+          if (col.type === 'date' && (from || to)) {
+            const itemDate = this.normalizeDate(item[col.field]);
+            const fromDate = from ? this.normalizeDate(from) : null;
+            const toDate = to ? this.normalizeDate(to) : null;
 
-        // فیلترهای دیگر
-        const filterVal = this.filters[col.field];
-        if (filterVal === undefined || filterVal === null || filterVal === '') return true;
-        const val = item[col.field];
-        if (typeof val === 'boolean') {
-          return val === (filterVal === true || filterVal === 'true');
-        } else {
-          return val?.toString().toLowerCase().includes(filterVal.toString().toLowerCase());
-        }
+            if (fromDate && itemDate < fromDate) return false;
+            if (toDate && itemDate > toDate) return false;
+            return true;
+          }
+
+          // فیلترهای دیگر
+          const filterVal = this.filters[col.field];
+          if (filterVal === undefined || filterVal === null || filterVal === '') return true;
+          const val = item[col.field];
+          if (typeof val === 'boolean') {
+            return val === (filterVal === true || filterVal === 'true');
+          } else {
+            return val?.toString().toLowerCase().includes(filterVal.toString().toLowerCase());
+          }
+        });
       });
-    });
+    }
+    this.pageIndex = 0;
   }
-  this.pageIndex = 0;
-}
-onDateRangeChange(field: string, rangeType: 'from' | 'to', value: any) {
+  onDateRangeChange(field: string, rangeType: 'from' | 'to', value: any) {
     console.log('Selected date:', value);
 
-  let dateValue = '';
+    let dateValue = '';
 
-  if (value) {
-    if (this.calendarType === 'jalali') {
-      dateValue = value.shamsi ? value.shamsi.split(' ')[0] : value;
+    if (value) {
+      if (this.calendarType === 'jalali') {
+        dateValue = value.shamsi ? value.shamsi.split(' ')[0] : value;
+      } else {
+        dateValue = value;
+      }
+      this.filters[`${field}_${rangeType}`] = this.normalizeDate(dateValue);
     } else {
-      dateValue = value;
+      delete this.filters[`${field}_${rangeType}`];
     }
-    this.filters[`${field}_${rangeType}`] = this.normalizeDate(dateValue);
-  } else {
-    delete this.filters[`${field}_${rangeType}`];
-  }
 
-  if (this.filters[`${field}_from`] && this.filters[`${field}_to`]) {
-    this.reloadDataOrFilter();
-  } else if (!this.filters[`${field}_from`] && !this.filters[`${field}_to`]) {
-    this.reloadDataOrFilter();
+    if (this.filters[`${field}_from`] && this.filters[`${field}_to`]) {
+      this.reloadDataOrFilter();
+    } else if (!this.filters[`${field}_from`] && !this.filters[`${field}_to`]) {
+      this.reloadDataOrFilter();
+    }
   }
-}
-
 
   onTextFilterChange(field: string, value: string) {
     if (value) this.filters[field] = value;
@@ -263,17 +312,16 @@ onDateRangeChange(field: string, rangeType: 'from' | 'to', value: any) {
   }
 
   clearFilter(field: string) {
-  delete this.filters[`${field}_from`];
-  delete this.filters[`${field}_to`];
-  delete this.filters[field];
+    delete this.filters[`${field}_from`];
+    delete this.filters[`${field}_to`];
+    delete this.filters[field];
 
-  if (field === 'created') {
-    this.datapicker.reset();
-    this.datapicker2.reset();
+    if (field === 'created') {
+      this.datapicker.reset();
+      this.datapicker2.reset();
+    }
+    this.reloadDataOrFilter();
   }
-  this.reloadDataOrFilter();
-  }
-
 
   nextPage() {
     if ((this.pageIndex + 1) * this.pageSize < this.filteredData.length) {
@@ -310,8 +358,21 @@ onDateRangeChange(field: string, rangeType: 'from' | 'to', value: any) {
 
   toJalali(gregDateStr: string): string {
     if (!gregDateStr) return '';
-    const [y, m, d] = gregDateStr.split('-').map(Number);
-    const { jy, jm, jd } = jalaali.toJalaali(y, m, d);
-    return `${jy}/${jm.toString().padStart(2, '0')}/${jd.toString().padStart(2, '0')}`;
+
+    const parts = gregDateStr.split('-').map(Number);
+    if (parts.length !== 3) return '';
+
+    let [y, m, d] = parts;
+
+    if (!y || !m || !d) return '';
+    if (m < 1 || m > 12 || d < 1 || d > 31) return '';
+
+    try {
+      const { jy, jm, jd } = jalaali.toJalaali(y, m, d);
+      return `${jy}/${jm.toString().padStart(2, '0')}/${jd.toString().padStart(2, '0')}`;
+    } catch (e) {
+      console.warn('خطای تبدیل به جلالی:', gregDateStr, e);
+      return '';
+    }
   }
 }

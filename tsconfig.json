@@ -15,10 +15,7 @@
     "experimentalDecorators": true,
     "moduleResolution": "bundler",
     "paths": {
-      "shared-table": [
-        "./dist/shared-table"
-      ]
-
+      "shared-table": ["./dist/shared-table"]
     },
     "importHelpers": true,
     "target": "ES2022",
