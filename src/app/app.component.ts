@@ -1,20 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { SharedTableComponent } from './shared-table/shared-table.component';
-// import { SharedTableComponent } from 'shared-table-filters'; 
+// import { SharedTableComponent } from 'shared-table-filters';
 
-
-export interface ColumnConfig {
-  id: string;
-  name: string;
-  active: boolean;
-  role: string;
-  created: Date;
-  gender: gen;
-}
-
-export enum gen {
-  'مرد' = 1,
-  'زن' = 2,
+export interface TableAction {
+  label: string;
+  type?: 'primary' | 'danger' | 'info' | 'success' | 'warning';
+  icon?: string;
+  callback: (row: any) => void;
 }
 
 @Component({
@@ -28,12 +20,40 @@ export class AppComponent {
   calendarType: any = 'jalali';
   // calendarType: any = 'miladi';
 
-  // columns: any[] = [
-  //   { field: 'id', title: 'شناسه', type: 'text', filterable: false },
-  //   { field: 'name', title: 'نام', type: 'text', filterable: true },
-  //   { field: 'active', title: 'فعال', type: 'boolean', filterable: true },
-  //   { field: 'role', title: 'نقش', type: 'select', options: ['کاربر', 'مدیر', 'مهمان'], filterable: true },
-  //   { field: 'created', title: 'تاریخ ایجاد', type: 'date', filterable: true },
-  //   { field: 'gender', title: 'جنسیت', type: 'radio', options: ['مرد', 'زن'], filterable: true },
-  // ];
+  tableActions: TableAction[] = [
+    {
+      label: 'ویرایش',
+      type: 'primary',
+      icon: 'bi bi-pencil',
+      callback: (row: any) => this.onEdit(row),
+    },
+    {
+      label: 'حذف',
+      type: 'danger',
+      icon: 'bi bi-trash',
+      callback: (row: any) => this.onDelete(row),
+    },
+    {
+      label: 'جزئیات',
+      type: 'info',
+      icon: 'bi bi-eye',
+      callback: (row: any) => this.onView(row),
+    },
+  ];
+
+  onEdit(row: any) {
+    console.log('ویرایش در پرنت:', row);
+  }
+
+  onDelete(row: any) {
+    console.log('حذف در پرنت:', row);
+  }
+
+  onView(row: any) {
+    console.log('جزئیات در پرنت:', row);
+  }
+
+  onSelectionChange(selected: any[]) {
+    console.log('ردیف‌های انتخاب‌شده:', selected);
+  }
 }

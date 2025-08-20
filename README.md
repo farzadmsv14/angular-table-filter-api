@@ -13,6 +13,8 @@ Install via npm:
 npm install shared-table-filters
 
 
+⚠️ Important: You need to install Bootstrap in your project for the default library and style to work properly:
+
 
 ⚡ Usage
 1. In HTML
@@ -20,6 +22,7 @@ npm install shared-table-filters
 
 <lib-shared-table
   [useApi]="true"
+  [showActions]="true"
   [apiUrl]="'https://your-api.com/data'"
   [calendarType]="'miladi' or 'jalali'">
 </lib-shared-table>
@@ -46,6 +49,44 @@ import { SharedTableComponent } from 'shared-table-filters';
 export class AppComponent {}
 
 
+🔘 Adding Action Buttons (Edit / Delete / View)
+
+You can add a custom "actions" column with buttons like Edit, Delete, or View.
+
+Example
+In Parent Component (app.component.ts):
+
+
+
+
+
+actions = [
+  { label: 'edit', class: 'btn btn-sm btn-primary', callback: (row: any) => this.onEdit(row) },
+  { label: 'delete', class: 'btn btn-sm btn-danger', callback: (row: any) => this.onDelete(row) },
+  { label: 'details', class: 'btn btn-sm btn-info', callback: (row: any) => this.onView(row) }
+];
+
+onEdit(row: any) {
+  console.log('Edit row:', row);
+  // Open modal or navigate
+}
+
+onDelete(row: any) {
+  console.log('Delete row:', row);
+  // Call delete API
+}
+
+onView(row: any) {
+  console.log('row details:', row);
+  // Navigate to detail page
+}
+
+
+
+
+
+
+
 
 🎨 Customization
 
@@ -55,3 +96,6 @@ Fully customizable column types, filters, and pagination.
 
 You can override default styles or add new ones in your global CSS.
 ```
+
+Gregorian formats: YYYY-MM-DD, YYYY/MM/DD, DD-MM-YYYY, DD/MM/YYYY
+Persian (Jalali) formats: YYYY/MM/DD or YYYY-MM-DD

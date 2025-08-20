@@ -2,15 +2,24 @@
   <div class="table-responsive" style="min-height: 200px">
     <table class="table align-middle dt-responsive nowrap w-100 table-check">
       <thead class="table-light">
+        <tr></tr>
         <tr>
+          <!-- ستون انتخاب -->
+          <th class="text-center">
+            <input type="checkbox" [checked]="isAllSelected()" [indeterminate]="isIndeterminate()" (change)="toggleSelectAll($event)" />
+          </th>
           <th *ngFor="let col of columns" class="position-relative user-select-none text-center">
-            <span (click)="sortData(col.field)" style="cursor: pointer">
+            <span *ngIf="col.sortable !== false" (click)="sortData(col.field)" style="cursor: pointer">
               {{ col.title }}
               <span *ngIf="sortField === col.field">
                 <ng-container *ngIf="sortDirection === 'asc'">▲</ng-container>
                 <ng-container *ngIf="sortDirection === 'desc'">▼</ng-container>
               </span>
             </span>
+            <span *ngIf="col.sortable === false">
+              {{ col.title }}
+            </span>
+
             <button *ngIf="col.filterable" (click)="toggleFilter(col.field)" class="btn btn-light border-0" style="padding: 0 !important ; --bs-btn-hover-bg: inherit; --bs-btn-hover-color: rgb(165, 161, 161); text-decoration: none">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 4h14M6 4l6 7v6l2 2v-8l3-4" />
@@ -84,7 +93,11 @@
       </thead>
 
       <tbody>
+        <tr *ngFor="let row of pagedData"></tr>
         <tr *ngFor="let row of pagedData">
+          <td class="text-center">
+            <input type="checkbox" [checked]="isSelected(row)" (change)="toggleSelection(row, $event)" />
+          </td>
           <td *ngFor="let col of columns" class="text-center align-middle">
             <ng-container [ngSwitch]="col.type">
               <ng-container *ngSwitchCase="'boolean'">
@@ -106,6 +119,15 @@
 
               <ng-container *ngSwitchDefault>
                 {{ row[col.field] }}
+              </ng-container>
+
+              <ng-container *ngSwitchCase="'action'">
+                <ng-container *ngFor="let action of actions">
+                  <button class="btn btn-sm me-1" [ngClass]="'btn-' + (action.type || 'secondary')" (click)="action.callback(row)">
+                    <i *ngIf="action.icon" class="{{ action.icon }} me-1"></i>
+                    {{ action.label }}
+                  </button>
+                </ng-container>
               </ng-container>
             </ng-container>
           </td>

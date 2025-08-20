@@ -1,75 +1,101 @@
 # 📦 shared-table-filters
 
-یک کتابخانه جدول آماده برای Angular با قابلیت **فیلتر، صفحه‌بندی، پشتیبانی از انواع ستون‌ها** (متن، بولین، سلکت، تاریخ، رادیو)  
-همراه با پشتیبانی از تاریخ **میلادی و شمسی** ✨
+A ready-to-use **Angular table library** with support for **filtering, pagination, and multiple column types** (text, boolean, select, date, radio).  
+Supports both **Gregorian and Jalali (Persian) calendars** ✨
 
 ---
 
-## 🚀 نصب
+## 🚀 Installation
 
-برای نصب از npm استفاده کنید:
+Install via npm:
 
 ```bash
 npm install shared-table-filters
 
 
-⚡ نحوه استفاده
-1. اضافه کردن ماژول به پروژه
-در فایل app.module.ts:
+⚠️ Important: You need to install Bootstrap in your project for the default library and style to work properly:
 
 
-import { NgModule } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
-import { SharedTableModule } from 'shared-table-filters'; // ← اضافه کردن ماژول
-
-import { AppComponent } from './app.component';
-
-@NgModule({
-  declarations: [AppComponent],
-  imports: [
-    BrowserModule,
-    SharedTableModule
-  ],
-  bootstrap: [AppComponent]
-})
-export class AppModule {}
+⚡ Usage
+1. In HTML
 
 
-
-2. استفاده در HTML
-
-<app-shared-table
+<lib-shared-table
   [useApi]="true"
+  [showActions]="true"
   [apiUrl]="'https://your-api.com/data'"
-  [calendarType]="'miladi'"
-  >
-</app-shared-table>
+  [calendarType]="'miladi' or 'jalali'">
+</lib-shared-table>
 
 
+useApi: Set to true to fetch data from an API, or false to use local data.
 
-3. تعریف  در app.component.ts
+apiUrl: Your API endpoint URL.
+
+calendarType: 'miladi' for Gregorian or 'jalali' for Persian calendar.
+
+2. In app.component.ts
+
 
 import { Component } from '@angular/core';
-import { ColumnConfig } from 'shared-table-filters';
+import { SharedTableComponent } from 'shared-table-filters';
 
 @Component({
   selector: 'app-root',
+  standalone: true,
+  imports: [SharedTableComponent],
   templateUrl: './app.component.html'
 })
-export class AppComponent {
+export class AppComponent {}
+
+
+🔘 Adding Action Buttons (Edit / Delete / View)
+
+You can add a custom "actions" column with buttons like Edit, Delete, or View.
+
+Example
+In Parent Component (app.component.ts):
+
+
+
+
+
+actions = [
+  { label: 'edit', class: 'btn btn-sm btn-primary', callback: (row: any) => this.onEdit(row) },
+  { label: 'delete', class: 'btn btn-sm btn-danger', callback: (row: any) => this.onDelete(row) },
+  { label: 'details', class: 'btn btn-sm btn-info', callback: (row: any) => this.onView(row) }
+];
+
+onEdit(row: any) {
+  console.log('Edit row:', row);
+  // Open modal or navigate
 }
 
-🎨 سفارشی‌سازی ظاهر
-می‌تونید کلاس‌های CSS دلخواهتون رو روی جدول اعمال کنید:
-📝 ویژگی‌ها
+onDelete(row: any) {
+  console.log('Delete row:', row);
+  // Call delete API
+}
 
-فیلتر متنی، بولین، سلکت، رادیویی و تاریخ (شمسی + میلادی)
+onView(row: any) {
+  console.log('row details:', row);
+  // Navigate to detail page
+}
 
-صفحه‌بندی داخلی
 
-پشتیبانی از داده‌های API و داده‌های لوکال
 
-قابلیت سفارشی‌سازی استایل‌ها
 
-طراحی ساده و قابل توسعه
+
+
+
+
+🎨 Customization
+
+Apply your own CSS classes to style the table.
+
+Fully customizable column types, filters, and pagination.
+
+You can override default styles or add new ones in your global CSS.
 ```
+
+Gregorian formats: YYYY-MM-DD, YYYY/MM/DD, DD-MM-YYYY, DD/MM/YYYY
+Persian (Jalali) formats: YYYY/MM/DD or YYYY-MM-DD

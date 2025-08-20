@@ -13,9 +13,16 @@ export interface ColumnConfig {
   filterable?: boolean;
 }
 
+export interface TableAction {
+  label: string;
+  type?: 'primary' | 'danger' | 'info' | 'success' | 'warning';
+  icon?: string;
+  callback: (row: any) => void;
+}
+
 @Component({
-  selector: 'lib-shared-table', 
-  standalone: true, 
+  selector: 'lib-shared-table',
+  standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule, HttpClientModule, NgPersianDatepickerModule],
   template: `
     <div class="card-body" dir="rtl">
@@ -24,13 +31,17 @@ export interface ColumnConfig {
           <thead class="table-light">
             <tr>
               <th *ngFor="let col of columns" class="position-relative user-select-none text-center">
-                <span (click)="sortData(col.field)" style="cursor: pointer">
+                <span *ngIf="col.sortable !== false" (click)="sortData(col.field)" style="cursor: pointer">
                   {{ col.title }}
                   <span *ngIf="sortField === col.field">
                     <ng-container *ngIf="sortDirection === 'asc'">▲</ng-container>
                     <ng-container *ngIf="sortDirection === 'desc'">▼</ng-container>
                   </span>
                 </span>
+                <span *ngIf="col.sortable === false">
+                  {{ col.title }}
+                </span>
+
                 <button *ngIf="col.filterable" (click)="toggleFilter(col.field)" class="btn btn-light border-0" style="padding: 0 !important ; --bs-btn-hover-bg: inherit; --bs-btn-hover-color: rgb(165, 161, 161); text-decoration: none">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 4h14M6 4l6 7v6l2 2v-8l3-4" />
@@ -120,11 +131,21 @@ export interface ColumnConfig {
                   </ng-container>
 
                   <ng-container *ngSwitchCase="'date'">
-                    {{ calendarType === 'jalali' ? toJalali(row[col.field]) : row[col.field] }}
+                    <!-- {{ calendarType === 'jalali' ? toJalali(row[col.field]) : row[col.field] }} -->
+                    {{ row[col.field] }}
                   </ng-container>
 
                   <ng-container *ngSwitchDefault>
                     {{ row[col.field] }}
+                  </ng-container>
+
+                  <ng-container *ngSwitchCase="'action'">
+                    <ng-container *ngFor="let action of actions">
+                      <button class="btn btn-sm me-1" [ngClass]="'btn-' + (action.type || 'secondary')" (click)="action.callback(row)">
+                        <i *ngIf="action.icon" class="{{ action.icon }} me-1"></i>
+                        {{ action.label }}
+                      </button>
+                    </ng-container>
                   </ng-container>
                 </ng-container>
               </td>
@@ -140,7 +161,7 @@ export interface ColumnConfig {
       <div class="mt-4 d-flex justify-content-center align-items-center gap-3">
         <button (click)="prevPage()" [disabled]="pageIndex === 0" class="btn btn-outline-dark rounded-pill px-3 shadow-sm fw-bold">قبلی</button>
 
-        <span class="fw-bold text-dark  px-3 py-2 rounded"> صفحه {{ pageIndex + 1 }} از {{ ceil(filteredData.length / pageSize) }} </span>
+        <span class="fw-bold text-dark px-3 py-2 rounded"> صفحه {{ pageIndex + 1 }} از {{ ceil(filteredData.length / pageSize) }} </span>
 
         <button (click)="nextPage()" [disabled]="(pageIndex + 1) * pageSize >= filteredData.length" class="btn btn-outline-dark rounded-pill px-3 shadow-sm fw-bold">بعدی</button>
       </div>
@@ -157,6 +178,8 @@ export class SharedTableComponent implements OnInit {
   columns: any[] = [];
   @Input() useApi = false;
   @Input() apiUrl = '';
+  @Input() showActions = false;
+  @Input() actions: TableAction[] = [];
 
   data: any[] = [];
   filteredData: any[] = [];
@@ -240,11 +263,73 @@ export class SharedTableComponent implements OnInit {
 
       columns.push(column);
     }
+
+    if (this.showActions && this.actions.length > 0) {
+      columns.push({
+        field: 'actions',
+        title: 'عملیات',
+        type: 'action',
+        filterable: false,
+        sortable: false,
+      });
+    }
+
     return columns;
   }
 
   isValidDate(value: any): boolean {
-    return !isNaN(Date.parse(value));
+    if (typeof value !== 'string') return false;
+
+    // ۱. تبدیل اعداد فارسی به انگلیسی
+    const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    value = value.replace(/[۰-۹]/g, (d) => persianDigits.indexOf(d).toString());
+
+    // ۲. حذف فاصله‌های اضافی
+    value = value.trim();
+
+    // ۳. الگوهای مختلف تاریخ
+    const formats = [
+      { regex: /^\d{4}[-/]\d{2}[-/]\d{2}$/, format: 'YMD' }, // YYYY-MM-DD یا YYYY/MM/DD
+      { regex: /^\d{2}[-/]\d{2}[-/]\d{4}$/, format: 'DMY' }, // DD-MM-YYYY یا DD/MM/YYYY
+    ];
+
+    for (const { regex, format } of formats) {
+      if (regex.test(value)) {
+        const parts = value.split(/[-/]/).map(Number);
+
+        let year, month, day;
+        if (format === 'YMD') {
+          [year, month, day] = parts;
+        } else {
+          [day, month, year] = parts;
+        }
+
+        // بررسی اعتبار تاریخ میلادی
+        const date = new Date(year, month - 1, day);
+        if (date.getFullYear() === year && date.getMonth() + 1 === month && date.getDate() === day) {
+          return true;
+        }
+
+        if (year >= 1200 && year <= 1500) {
+          return this.isValidJalaliDate(year, month, day);
+        }
+      }
+    }
+
+    return false;
+  }
+
+  isValidJalaliDate(year: number, month: number, day: number): boolean {
+    const isLeap = (year: number) => {
+      const a = year - (year > 979 ? 979 : 0);
+      const b = a % 33;
+      return [1, 5, 9, 13, 17, 22, 26, 30].includes(b);
+    };
+
+    if (month < 1 || month > 12) return false;
+
+    const maxDays = month <= 6 ? 31 : month <= 11 ? 30 : isLeap(year) ? 30 : 29;
+    return day >= 1 && day <= maxDays;
   }
 
   constructor(private http: HttpClient) {}

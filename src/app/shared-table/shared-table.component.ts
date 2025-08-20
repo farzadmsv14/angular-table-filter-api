@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { HttpClient, HttpClientModule, HttpParams } from '@angular/common/http';
 import * as jalaali from 'jalaali-js';
 import { CommonModule } from '@angular/common';
@@ -13,6 +13,13 @@ export interface ColumnConfig {
   filterable?: boolean;
 }
 
+export interface TableAction {
+  label: string;
+  type?: 'primary' | 'danger' | 'info' | 'success' | 'warning';
+  icon?: string;
+  callback: (row: any) => void;
+}
+
 @Component({
   selector: 'app-shared-table',
   imports: [CommonModule, FormsModule, ReactiveFormsModule, HttpClientModule, NgPersianDatepickerModule],
@@ -24,6 +31,11 @@ export class SharedTableComponent implements OnInit {
   columns: any[] = [];
   @Input() useApi = false;
   @Input() apiUrl = '';
+  @Input() showActions = false;
+  @Input() actions: TableAction[] = [];
+  @Input() enableSelection: boolean = true; 
+  @Output() selectionChange = new EventEmitter<any[]>();
+  selectedRows: any[] = [];
 
   data: any[] = [];
   filteredData: any[] = [];
@@ -68,6 +80,36 @@ export class SharedTableComponent implements OnInit {
     { id: '30', name: 'فرزاد', active: true, role: 'کاربر', created: '2025-10-10', gender: 'مرد' },
   ];
 
+  toggleSelection(row: any, event: any) {
+    if (event.target.checked) {
+      this.selectedRows.push(row);
+    } else {
+      this.selectedRows = this.selectedRows.filter((r) => r !== row);
+    }
+    this.selectionChange.emit(this.selectedRows);
+  }
+
+  isSelected(row: any): boolean {
+    return this.selectedRows.includes(row);
+  }
+
+  toggleSelectAll(event: any) {
+    if (event.target.checked) {
+      this.selectedRows = [...this.data]; // 👈 همه انتخاب
+    } else {
+      this.selectedRows = []; // 👈 همه لغو
+    }
+    this.selectionChange.emit(this.selectedRows);
+  }
+
+  isAllSelected(): boolean {
+    return this.selectedRows.length === this.data.length && this.data.length > 0;
+  }
+
+  isIndeterminate(): boolean {
+    return this.selectedRows.length > 0 && this.selectedRows.length < this.data.length;
+  }
+
   generateColumns(data: any[]): any[] {
     if (!data || data.length === 0) return [];
 
@@ -107,6 +149,27 @@ export class SharedTableComponent implements OnInit {
 
       columns.push(column);
     }
+
+    if (this.showActions && this.actions.length > 0) {
+      columns.push({
+        field: 'actions',
+        title: 'عملیات',
+        type: 'action',
+        filterable: false,
+        sortable: false,
+      });
+    }
+
+    if (this.enableSelection) {
+      columns.unshift({
+        field: 'checkbox',
+        title: '',
+        type: 'checkbox',
+        filterable: false,
+        sortable: false,
+      });
+    }
+
     return columns;
   }
 
