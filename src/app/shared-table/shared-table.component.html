@@ -4,8 +4,7 @@
       <thead class="table-light">
         <tr></tr>
         <tr>
-          <!-- ستون انتخاب -->
-          <th class="text-center">
+          <th *ngIf="enableSelection" class="text-center">
             <input type="checkbox" [checked]="isAllSelected()" [indeterminate]="isIndeterminate()" (change)="toggleSelectAll($event)" />
           </th>
           <th *ngFor="let col of columns" class="position-relative user-select-none text-center">
@@ -95,7 +94,7 @@
       <tbody>
         <tr *ngFor="let row of pagedData"></tr>
         <tr *ngFor="let row of pagedData">
-          <td class="text-center">
+          <td *ngIf="enableSelection" class="text-center">
             <input type="checkbox" [checked]="isSelected(row)" (change)="toggleSelection(row, $event)" />
           </td>
           <td *ngFor="let col of columns" class="text-center align-middle">

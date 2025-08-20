@@ -10,4 +10,12 @@
 
 <!-- https://192.168.1.100:3000/users?name=ali&active=true&role=مدیر -->
 
-<app-shared-table [useApi]="false" [showActions]="true" [calendarType]="calendarType" [actions]="tableActions" [enableSelection]="true" (selectionChange)="onSelectionChange($event)"></app-shared-table>
+<app-shared-table 
+[useApi]="false" 
+[calendarType]="calendarType" 
+[showActions]="true" 
+[actions]="tableActions" 
+[enableSelection]="true" 
+(selectionChange)="onSelectionChange($event)"
+>
+</app-shared-table>

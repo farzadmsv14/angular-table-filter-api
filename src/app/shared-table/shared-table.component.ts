@@ -33,7 +33,7 @@ export class SharedTableComponent implements OnInit {
   @Input() apiUrl = '';
   @Input() showActions = false;
   @Input() actions: TableAction[] = [];
-  @Input() enableSelection: boolean = true; 
+  @Input() enableSelection: boolean = false;
   @Output() selectionChange = new EventEmitter<any[]>();
   selectedRows: any[] = [];
 
@@ -233,7 +233,6 @@ export class SharedTableComponent implements OnInit {
   ngOnInit() {
     this.columns = this.generateColumns(this.fakeData);
     this.loadData();
-    console.log(this.columns);
   }
 
   loadData() {
