@@ -1,13 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { SharedTableComponent } from './shared-table/shared-table.component';
+import { TableAction } from 'shared-table';
 // import { SharedTableComponent } from 'shared-table-filters';
-
-export interface TableAction {
-  label: string;
-  type?: 'primary' | 'danger' | 'info' | 'success' | 'warning';
-  icon?: string;
-  callback: (row: any) => void;
-}
 
 @Component({
   selector: 'app-root',
@@ -24,7 +18,7 @@ export class AppComponent {
     {
       label: 'ویرایش',
       type: 'primary',
-      icon: 'bi bi-pencil',
+      icon: 'bi bi-pencil',   
       callback: (row: any) => this.onEdit(row),
     },
     {
@@ -54,6 +48,6 @@ export class AppComponent {
   }
 
   onSelectionChange(selected: any[]) {
-    console.log('ردیف‌های انتخاب‌شده:', selected);
-  }
+  console.log('ردیف‌های انتخاب‌شده:', selected);
+}
 }

@@ -26,8 +26,6 @@
               </svg>
             </button>
             <div *ngIf="filterOpen[col.field] && col.filterable" class="position-absolute bg-white border p-2 shadow-sm" style="top: 100%; right: 30%; min-width: 150px; z-index: 10">
-              <!-- فیلتر متن -->
-
               <div>
                 <p>فیلنر بر اساس : {{ col.title }}</p>
               </div>
@@ -36,7 +34,6 @@
                 <input placeholder="{{ col.title }}" type="text" [value]="filters[col.field] || ''" (input)="onTextFilterChange(col.field, $any($event.target).value)" class="form-control form-control-sm" />
               </ng-container>
 
-              <!-- فیلتر بولی -->
               <ng-container *ngIf="col.type === 'boolean'">
                 <div class="form-check form-check-inline">
                   <input class="form-check-input" type="checkbox" [checked]="filters[col.field]" (change)="onCheckboxFilterChange(col.field, $any($event.target).checked)" />
@@ -44,7 +41,6 @@
                 </div>
               </ng-container>
 
-              <!-- فیلتر انتخابی -->
               <ng-container *ngIf="col.type === 'select'">
                 <select class="form-select form-select-sm" [value]="filters[col.field] || ''" (change)="onSelectFilterChange(col.field, $any($event.target).value)">
                   <option value="">همه</option>
@@ -54,7 +50,6 @@
                 </select>
               </ng-container>
 
-              <!-- فیلتر رادیو -->
               <ng-container *ngIf="col.type === 'radio'">
                 <div *ngFor="let option of col.options" class="form-check">
                   <input type="radio" [name]="col.field" class="form-check-input" [value]="option" [checked]="filters[col.field] === option" (change)="onRadioFilterChange(col.field, option)" />
@@ -62,7 +57,6 @@
                 </div>
               </ng-container>
 
-              <!-- فیلتر تاریخ (بازه) -->
               <ng-container *ngIf="col.type === 'date'">
                 <ng-container *ngIf="calendarType === 'miladi'">
                   <label>از:</label>
@@ -138,12 +132,11 @@
     </table>
   </div>
 
-  <!-- پیمایش صفحه -->
   <div class="mt-4 d-flex justify-content-center align-items-center gap-3">
-    <button (click)="prevPage()" [disabled]="pageIndex === 0" class="btn btn-outline-dark rounded-pill px-3 shadow-sm fw-bold">قبلی</button>
+    <button (click)="prevPage()" [disabled]="pageNumber === 0" class="btn btn-outline-dark rounded-pill px-3 shadow-sm fw-bold">قبلی</button>
 
-    <span class="fw-bold text-dark px-3 py-2 rounded"> صفحه {{ pageIndex + 1 }} از {{ ceil(filteredData.length / pageSize) }} </span>
+    <span class="fw-bold text-dark px-3 py-2 rounded"> صفحه {{ pageNumber + 1 }} از {{ ceil(totalCount / pageSize) }} </span>
 
-    <button (click)="nextPage()" [disabled]="(pageIndex + 1) * pageSize >= filteredData.length" class="btn btn-outline-dark rounded-pill px-3 shadow-sm fw-bold">بعدی</button>
+    <button (click)="nextPage()" [disabled]="(pageNumber + 1) * pageSize >= totalCount" class="btn btn-outline-dark rounded-pill px-3 shadow-sm fw-bold">بعدی</button>
   </div>
 </div>

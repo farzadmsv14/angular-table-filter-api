@@ -20,6 +20,13 @@ export interface TableAction {
   callback: (row: any) => void;
 }
 
+export interface TableAction {
+  label: string;
+  type?: 'primary' | 'danger' | 'info' | 'success' | 'warning';
+  icon?: string;
+  callback: (row: any) => void;
+}
+
 @Component({
   selector: 'app-shared-table',
   imports: [CommonModule, FormsModule, ReactiveFormsModule, HttpClientModule, NgPersianDatepickerModule],
@@ -36,13 +43,14 @@ export class SharedTableComponent implements OnInit {
   @Input() enableSelection: boolean = false;
   @Output() selectionChange = new EventEmitter<any[]>();
   selectedRows: any[] = [];
-
   data: any[] = [];
   filteredData: any[] = [];
   filters: { [key: string]: any } = {};
   filterOpen: { [key: string]: boolean } = {};
-  pageSize = 10;
-  pageIndex = 0;
+  pageSize = 0;
+  pageNumber = 0;
+  totalCount = 0;
+
   datapicker = new FormControl(new Date());
   datapicker2 = new FormControl(new Date());
   @Input() calendarType: 'miladi' | 'jalali' = 'jalali';
@@ -50,34 +58,6 @@ export class SharedTableComponent implements OnInit {
   fakeData = [
     { id: '1', name: 'علی', active: true, role: 'مدیر', created: '2025-01-15', gender: 'مرد' },
     { id: '2', name: 'زهرا', active: false, role: 'کاربر', created: '2025-02-20', gender: 'زن' },
-    { id: '3', name: 'فرزاد', active: true, role: 'مهمان', created: '2025-03-05', gender: 'مرد' },
-    { id: '4', name: 'سارا', active: false, role: 'کاربر', created: '2025-04-10', gender: 'زن' },
-    { id: '5', name: 'محمد', active: true, role: 'مدیر', created: '2025-05-12', gender: 'مرد' },
-    { id: '6', name: 'فرزاد', active: false, role: 'کاربر', created: '2025-06-08', gender: 'مرد' },
-    { id: '7', name: 'حمید', active: true, role: 'مهمان', created: '2025-07-01', gender: 'مرد' },
-    { id: '8', name: 'مریم', active: false, role: 'مدیر', created: '2025-08-13', gender: 'زن' },
-    { id: '9', name: 'ناصر', active: true, role: 'کاربر', created: '2025-09-20', gender: 'مرد' },
-    { id: '10', name: 'نگار', active: false, role: 'مهمان', created: '2025-10-05', gender: 'زن' },
-    { id: '11', name: 'فرزاد', active: true, role: 'کاربر', created: '2025-01-01', gender: 'مرد' },
-    { id: '12', name: 'نسترن', active: false, role: 'مهمان', created: '2025-02-14', gender: 'زن' },
-    { id: '13', name: 'پیمان', active: true, role: 'مدیر', created: '2025-03-20', gender: 'مرد' },
-    { id: '14', name: 'شیرین', active: true, role: 'کاربر', created: '2025-04-11', gender: 'زن' },
-    { id: '15', name: 'کامران', active: false, role: 'مهمان', created: '2025-05-19', gender: 'مرد' },
-    { id: '16', name: 'الهام', active: true, role: 'مدیر', created: '2025-06-30', gender: 'زن' },
-    { id: '17', name: 'فرزاد', active: false, role: 'کاربر', created: '2025-07-15', gender: 'مرد' },
-    { id: '18', name: 'شبنم', active: true, role: 'مهمان', created: '2025-08-01', gender: 'زن' },
-    { id: '19', name: 'بهرام', active: false, role: 'مدیر', created: '2025-09-10', gender: 'مرد' },
-    { id: '20', name: 'یاسمین', active: true, role: 'کاربر', created: '2025-10-25', gender: 'زن' },
-    { id: '21', name: 'جواد', active: false, role: 'مهمان', created: '2025-01-22', gender: 'مرد' },
-    { id: '22', name: 'فرزانه', active: true, role: 'کاربر', created: '2025-02-28', gender: 'زن' },
-    { id: '23', name: 'کوروش', active: false, role: 'مدیر', created: '2025-03-07', gender: 'مرد' },
-    { id: '24', name: 'پریسا', active: true, role: 'کاربر', created: '2025-04-14', gender: 'زن' },
-    { id: '25', name: 'فرزاد', active: false, role: 'مهمان', created: '2025-05-29', gender: 'مرد' },
-    { id: '26', name: 'نازنین', active: true, role: 'مدیر', created: '2025-06-04', gender: 'زن' },
-    { id: '27', name: 'میلاد', active: false, role: 'کاربر', created: '2025-07-23', gender: 'مرد' },
-    { id: '28', name: 'شادی', active: true, role: 'مهمان', created: '2025-08-11', gender: 'زن' },
-    { id: '29', name: 'امیر', active: false, role: 'مدیر', created: '2025-09-02', gender: 'مرد' },
-    { id: '30', name: 'فرزاد', active: true, role: 'کاربر', created: '2025-10-10', gender: 'مرد' },
   ];
 
   toggleSelection(row: any, event: any) {
@@ -95,9 +75,9 @@ export class SharedTableComponent implements OnInit {
 
   toggleSelectAll(event: any) {
     if (event.target.checked) {
-      this.selectedRows = [...this.data]; // 👈 همه انتخاب
+      this.selectedRows = [...this.data];
     } else {
-      this.selectedRows = []; // 👈 همه لغو
+      this.selectedRows = [];
     }
     this.selectionChange.emit(this.selectedRows);
   }
@@ -176,14 +156,11 @@ export class SharedTableComponent implements OnInit {
   isValidDate(value: any): boolean {
     if (typeof value !== 'string') return false;
 
-    // ۱. تبدیل اعداد فارسی به انگلیسی
     const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
     value = value.replace(/[۰-۹]/g, (d) => persianDigits.indexOf(d).toString());
 
-    // ۲. حذف فاصله‌های اضافی
     value = value.trim();
 
-    // ۳. الگوهای مختلف تاریخ
     const formats = [
       { regex: /^\d{4}[-/]\d{2}[-/]\d{2}$/, format: 'YMD' }, // YYYY-MM-DD یا YYYY/MM/DD
       { regex: /^\d{2}[-/]\d{2}[-/]\d{4}$/, format: 'DMY' }, // DD-MM-YYYY یا DD/MM/YYYY
@@ -200,7 +177,6 @@ export class SharedTableComponent implements OnInit {
           [day, month, year] = parts;
         }
 
-        // بررسی اعتبار تاریخ میلادی
         const date = new Date(year, month - 1, day);
         if (date.getFullYear() === year && date.getMonth() + 1 === month && date.getDate() === day) {
           return true;
@@ -245,7 +221,8 @@ export class SharedTableComponent implements OnInit {
   }
 
   fetchDataFromApi() {
-    let params = new HttpParams();
+    let params = new HttpParams().set('pageNumber', this.pageNumber.toString()).set('pageSize', this.pageSize.toString());
+
     Object.keys(this.filters).forEach((key) => {
       const val = this.filters[key];
       if (val !== undefined && val !== null && val !== '') {
@@ -253,9 +230,18 @@ export class SharedTableComponent implements OnInit {
       }
     });
 
-    this.http.get<any[]>(this.apiUrl, { params }).subscribe({
+    this.http.get<any>(this.apiUrl, { params }).subscribe({
       next: (res) => {
-        this.data = res;
+        // {
+        //   items: [...],
+        //   totalCount: 100,
+        //   pageNumber: 0,
+        //   pageSize: 10
+        // }
+        this.data = res.items;
+        this.pageNumber = res.pageNumber;
+        this.pageSize = res.pageSize;
+        this.totalCount = res.totalCount;
         this.applyAll();
       },
       error: (err) => {
@@ -274,7 +260,6 @@ export class SharedTableComponent implements OnInit {
       d = 0;
 
     if (this.calendarType === 'jalali') {
-      // فرمت شمسی YYYY/MM/DD یا YYYY-MM-DD
       if (/^\d{4}[\/\-]\d{2}[\/\-]\d{2}$/.test(dateStr)) {
         const parts = dateStr.split(/[-\/]/).map(Number);
         if (parts.length === 3) {
@@ -294,7 +279,6 @@ export class SharedTableComponent implements OnInit {
         return '';
       }
     } else {
-      // میلادی فرمت‌های YYYY-MM-DD ، YYYY/MM/DD ، DD-MM-YYYY ، DD/MM/YYYY
       if (/^\d{4}[-\/]\d{2}[-\/]\d{2}$/.test(dateStr)) {
         const parts = dateStr.split(/[-\/]/).map(Number);
         if (parts.length === 3) {
@@ -329,7 +313,6 @@ export class SharedTableComponent implements OnInit {
       if (this.sortDirection === 'asc') {
         this.sortDirection = 'desc';
       } else if (this.sortDirection === 'desc') {
-        // 🔸 حالت سوم → حذف مرتب‌سازی
         this.sortField = null;
         this.sortDirection = null;
       } else {
@@ -401,8 +384,6 @@ export class SharedTableComponent implements OnInit {
         return this.sortDirection === 'asc' ? (valA > valB ? 1 : -1) : valA < valB ? 1 : -1;
       });
     }
-
-    this.pageIndex = 0;
   }
 
   onDateRangeChange(field: string, rangeType: 'from' | 'to', value: any) {
@@ -483,19 +464,21 @@ export class SharedTableComponent implements OnInit {
   }
 
   nextPage() {
-    if ((this.pageIndex + 1) * this.pageSize < this.filteredData.length) {
-      this.pageIndex++;
+    if ((this.pageNumber + 1) * this.pageSize < this.totalCount) {
+      this.pageNumber++;
+      this.fetchDataFromApi();
     }
   }
 
   prevPage() {
-    if (this.pageIndex > 0) {
-      this.pageIndex--;
+    if (this.pageNumber > 0) {
+      this.pageNumber--;
+      this.fetchDataFromApi();
     }
   }
 
   get pagedData() {
-    return this.filteredData.slice(this.pageIndex * this.pageSize, (this.pageIndex + 1) * this.pageSize);
+    return this.filteredData.slice(this.pageNumber * this.pageSize, (this.pageNumber + 1) * this.pageSize);
   }
 
   ceil(value: number) {

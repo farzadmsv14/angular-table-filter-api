@@ -11,11 +11,11 @@
 <!-- https://192.168.1.100:3000/users?name=ali&active=true&role=مدیر -->
 
 <app-shared-table 
-[useApi]="false" 
+[useApi]="true" 
 [calendarType]="calendarType" 
 [showActions]="true" 
 [actions]="tableActions" 
 [enableSelection]="true" 
 (selectionChange)="onSelectionChange($event)"
->
+[apiUrl]="'https://mocki.io/v1/1eb088d9-c9c2-4288-8206-80b7936c9a02'">
 </app-shared-table>
