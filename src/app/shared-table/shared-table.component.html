@@ -1,4 +1,4 @@
-<div class="card-body" dir="rtl">
+<div *ngIf="isloading" class="card-body" dir="rtl">
   <div class="table-responsive" style="min-height: 200px">
     <table class="table align-middle dt-responsive nowrap w-100 table-check">
       <thead class="table-light">
@@ -140,3 +140,10 @@
     <button (click)="nextPage()" [disabled]="(pageNumber + 1) * pageSize >= totalCount" class="btn btn-outline-dark rounded-pill px-3 shadow-sm fw-bold">بعدی</button>
   </div>
 </div>
+
+
+<div class="h-100 w-100 d-flex align-item-center justify-content-center" *ngIf="!isloading">
+  <span class="loader"></span>
+</div>
+
+

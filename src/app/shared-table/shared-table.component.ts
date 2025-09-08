@@ -5,21 +5,6 @@ import { CommonModule } from '@angular/common';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgPersianDatepickerModule } from 'ng-persian-datepicker';
 
-export interface ColumnConfig {
-  field: string;
-  title: string;
-  type: 'text' | 'boolean' | 'select' | 'date' | 'radio';
-  options?: any[];
-  filterable?: boolean;
-}
-
-export interface TableAction {
-  label: string;
-  type?: 'primary' | 'danger' | 'info' | 'success' | 'warning';
-  icon?: string;
-  callback: (row: any) => void;
-}
-
 export interface TableAction {
   label: string;
   type?: 'primary' | 'danger' | 'info' | 'success' | 'warning';
@@ -31,6 +16,7 @@ export interface TableAction {
   selector: 'app-shared-table',
   imports: [CommonModule, FormsModule, ReactiveFormsModule, HttpClientModule, NgPersianDatepickerModule],
   providers: [],
+  standalone: true,
   templateUrl: './shared-table.component.html',
   styleUrls: ['./shared-table.component.css'],
 })
@@ -47,10 +33,10 @@ export class SharedTableComponent implements OnInit {
   filteredData: any[] = [];
   filters: { [key: string]: any } = {};
   filterOpen: { [key: string]: boolean } = {};
-  pageSize = 0;
-  pageNumber = 0;
+  pageSize = 10;
+  pageNumber = 1;
   totalCount = 0;
-
+  isloading: boolean = false;
   datapicker = new FormControl(new Date());
   datapicker2 = new FormControl(new Date());
   @Input() calendarType: 'miladi' | 'jalali' = 'jalali';
@@ -99,7 +85,6 @@ export class SharedTableComponent implements OnInit {
     for (const key of Object.keys(sample)) {
       const values = data.map((d) => d[key]);
       const uniqueValues = Array.from(new Set(values));
-
       let type: string = 'text';
 
       if (key === 'id') {
@@ -126,7 +111,6 @@ export class SharedTableComponent implements OnInit {
       if (type === 'select' || type === 'radio') {
         column.options = uniqueValues;
       }
-
       columns.push(column);
     }
 
@@ -140,15 +124,15 @@ export class SharedTableComponent implements OnInit {
       });
     }
 
-    if (this.enableSelection) {
-      columns.unshift({
-        field: 'checkbox',
-        title: '',
-        type: 'checkbox',
-        filterable: false,
-        sortable: false,
-      });
-    }
+    // if (this.enableSelection) {
+    //   columns.unshift({
+    //     field: 'checkbox',
+    //     title: '',
+    //     type: 'checkbox',
+    //     filterable: false,
+    //     sortable: false,
+    //   });
+    // }
 
     return columns;
   }
@@ -162,8 +146,8 @@ export class SharedTableComponent implements OnInit {
     value = value.trim();
 
     const formats = [
-      { regex: /^\d{4}[-/]\d{2}[-/]\d{2}$/, format: 'YMD' }, // YYYY-MM-DD یا YYYY/MM/DD
-      { regex: /^\d{2}[-/]\d{2}[-/]\d{4}$/, format: 'DMY' }, // DD-MM-YYYY یا DD/MM/YYYY
+      { regex: /^\d{4}[-/]\d{2}[-/]\d{2}$/, format: 'YMD' },
+      { regex: /^\d{2}[-/]\d{2}[-/]\d{4}$/, format: 'DMY' },
     ];
 
     for (const { regex, format } of formats) {
@@ -199,7 +183,6 @@ export class SharedTableComponent implements OnInit {
     };
 
     if (month < 1 || month > 12) return false;
-
     const maxDays = month <= 6 ? 31 : month <= 11 ? 30 : isLeap(year) ? 30 : 29;
     return day >= 1 && day <= maxDays;
   }
@@ -209,6 +192,9 @@ export class SharedTableComponent implements OnInit {
   ngOnInit() {
     this.columns = this.generateColumns(this.fakeData);
     this.loadData();
+
+    console.log(this.columns);
+    
   }
 
   loadData() {
@@ -221,8 +207,8 @@ export class SharedTableComponent implements OnInit {
   }
 
   fetchDataFromApi() {
+    this.isloading = false;
     let params = new HttpParams().set('pageNumber', this.pageNumber.toString()).set('pageSize', this.pageSize.toString());
-
     Object.keys(this.filters).forEach((key) => {
       const val = this.filters[key];
       if (val !== undefined && val !== null && val !== '') {
@@ -230,14 +216,13 @@ export class SharedTableComponent implements OnInit {
       }
     });
 
+    if (this.sortField && this.sortDirection) {
+      params = params.set('sortField', this.sortField).set('sortDirection', this.sortDirection);
+    }
+
     this.http.get<any>(this.apiUrl, { params }).subscribe({
       next: (res) => {
-        // {
-        //   items: [...],
-        //   totalCount: 100,
-        //   pageNumber: 0,
-        //   pageSize: 10
-        // }
+        this.isloading = true;
         this.data = res.items;
         this.pageNumber = res.pageNumber;
         this.pageSize = res.pageSize;
@@ -323,7 +308,11 @@ export class SharedTableComponent implements OnInit {
       this.sortDirection = 'asc';
     }
 
-    this.applyAll();
+    if (this.useApi) {
+      this.fetchDataFromApi();
+    } else {
+      this.applyAll();
+    }
   }
 
   applyAll() {
@@ -478,7 +467,7 @@ export class SharedTableComponent implements OnInit {
   }
 
   get pagedData() {
-    return this.filteredData.slice(this.pageNumber * this.pageSize, (this.pageNumber + 1) * this.pageSize);
+    return this.filteredData;
   }
 
   ceil(value: number) {
