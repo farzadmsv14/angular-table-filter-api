@@ -10,12 +10,57 @@
 
 <!-- https://192.168.1.100:3000/users?name=ali&active=true&role=مدیر -->
 
-<app-shared-table 
-[useApi]="true" 
-[calendarType]="calendarType" 
-[showActions]="true" 
-[actions]="tableActions" 
-[enableSelection]="true" 
-(selectionChange)="onSelectionChange($event)"
-[apiUrl]="'https://mocki.io/v1/1eb088d9-c9c2-4288-8206-80b7936c9a02'">
+<!-- <app-shared-table
+  [useApi]="true"
+  [calendarType]="calendarType"
+  [showActions]="true"
+  [actions]="tableActions"
+  [valueMappings]="{ category: statusTable }"
+  [enableSelection]="true"
+  [hiddenColumns]="['id', 'createdDate']"
+  (selectionChange)="onSelectionChange($event)"
+  [enableSorting]="true"
+  [enableFiltering]="true"
+  [columnTitles]="{
+    name: 'نام کالا',
+    price: 'قیمت (تومان)',
+    createdDate: 'تاریخ ایجاد',
+    isActive: 'وضعیت فعال',
+    category: 'دسته‌بندی',
+    stock: 'موجودی',
+    description: 'توضیحات'
+  }"
+  [apiUrl]="'https://mocki.io/v1/3552185c-d0b3-4db2-88ef-0ed0946ead38'"
+>
+</app-shared-table> -->
+
+<!-- <app-shared-table [useApi]="false"   [localData]="[
+    { id: 1, name: 'فرزاد', active: true, created: '2024-03-01' },
+    { id: 2, name: 'مهدی', active: false, created: '2024-04-15' }
+  ]" [columnStyles]="columnStyles" [showActions]="true" [actions]="tableActions"> </app-shared-table> -->
+
+<app-shared-table
+  [useApi]="true"
+  [calendarType]="calendarType"
+  [showActions]="true"
+  [actions]="tableActions"
+  [valueMappings]="{ category: statusTable }"
+  [enableSelection]="true"
+  [hiddenColumns]="['']"
+  (selectionChange)="onSelectionChange($event)"
+  [enableSorting]="true"
+  [enableFiltering]="true"
+  [columnTitles]="{
+    fullName: 'نام کالا',
+    price: 'قیمت (تومان)',
+    createdDate: 'تاریخ ایجاد',
+    isActive: 'وضعیت فعال',
+    email: 'ایمیل',
+    category: 'دسته‌بندی',
+    stock: 'موجودی',
+    description: 'توضیحات'
+  }"
+  [apiUrl]="'https://mocki.io/v1/d5e6e06a-e842-4546-8724-5e4152b43cde'"
+  [columnStyles]="columnStyles"
+>
 </app-shared-table>

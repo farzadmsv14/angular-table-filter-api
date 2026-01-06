@@ -24,9 +24,17 @@ export class SharedTableComponent implements OnInit {
   columns: any[] = [];
   @Input() useApi = false;
   @Input() apiUrl = '';
+  @Input() localData: any[] = [];
+  @Input() columnStyles: { [key: string]: any } = {};
   @Input() showActions = false;
   @Input() actions: TableAction[] = [];
   @Input() enableSelection: boolean = false;
+  @Input() calendarType: 'miladi' | 'jalali' = 'jalali';
+  @Input() hiddenColumns: string[] = [];
+  @Input() columnTitles: { [key: string]: string } = {};
+  @Input() valueMappings: { [field: string]: { [value: string]: string } } = {};
+  @Input() enableSorting = true;
+  @Input() enableFiltering = true;
   @Output() selectionChange = new EventEmitter<any[]>();
   selectedRows: any[] = [];
   data: any[] = [];
@@ -34,17 +42,20 @@ export class SharedTableComponent implements OnInit {
   filters: { [key: string]: any } = {};
   filterOpen: { [key: string]: boolean } = {};
   pageSize = 10;
-  pageNumber = 1;
+  currentPage = 1;
   totalCount = 0;
   isloading: boolean = false;
   datapicker = new FormControl(new Date());
   datapicker2 = new FormControl(new Date());
-  @Input() calendarType: 'miladi' | 'jalali' = 'jalali';
 
-  fakeData = [
-    { id: '1', name: 'علی', active: true, role: 'مدیر', created: '2025-01-15', gender: 'مرد' },
-    { id: '2', name: 'زهرا', active: false, role: 'کاربر', created: '2025-02-20', gender: 'زن' },
-  ];
+  getDisplayValue(row: any, col: any): any {
+    const field = col.field;
+    const value = row[field];
+    if (this.valueMappings[field] && this.valueMappings[field][value] !== undefined) {
+      return this.valueMappings[field][value];
+    }
+    return value;
+  }
 
   toggleSelection(row: any, event: any) {
     if (event.target.checked) {
@@ -83,11 +94,15 @@ export class SharedTableComponent implements OnInit {
     const columns: any[] = [];
 
     for (const key of Object.keys(sample)) {
+      if (this.hiddenColumns.includes(key)) continue;
+
       const values = data.map((d) => d[key]);
       const uniqueValues = Array.from(new Set(values));
       let type: string = 'text';
 
-      if (key === 'id') {
+      if (this.valueMappings[key]) {
+        type = 'select';
+      } else if (key === 'id') {
         type = 'string';
       } else if (typeof sample[key] === 'boolean') {
         type = 'boolean';
@@ -95,22 +110,28 @@ export class SharedTableComponent implements OnInit {
         type = 'date';
       } else if (uniqueValues.length === 2) {
         type = 'radio';
-      } else if (uniqueValues.length > 2 && uniqueValues.length <= 10) {
+      } else if (uniqueValues.length > 2 && uniqueValues.length <= 5) {
         type = 'select';
-      } else if (!this.isValidDate(sample[key])) {
+      } else {
         type = 'string';
       }
 
       const column: any = {
         field: key,
-        title: key,
+        title: this.columnTitles[key] || key,
         type: type,
-        filterable: key !== 'id',
+        filterable: this.enableFiltering && key !== 'id',
       };
 
-      if (type === 'select' || type === 'radio') {
-        column.options = uniqueValues;
+      if (this.valueMappings[key]) {
+        column.options = Object.entries(this.valueMappings[key]).map(([value, label]) => ({
+          value,
+          label,
+        }));
+      } else if (type === 'select' || type === 'radio') {
+        column.options = uniqueValues.map((v) => ({ value: v, label: v }));
       }
+
       columns.push(column);
     }
 
@@ -123,16 +144,6 @@ export class SharedTableComponent implements OnInit {
         sortable: false,
       });
     }
-
-    // if (this.enableSelection) {
-    //   columns.unshift({
-    //     field: 'checkbox',
-    //     title: '',
-    //     type: 'checkbox',
-    //     filterable: false,
-    //     sortable: false,
-    //   });
-    // }
 
     return columns;
   }
@@ -190,25 +201,22 @@ export class SharedTableComponent implements OnInit {
   constructor(private http: HttpClient) {}
 
   ngOnInit() {
-    this.columns = this.generateColumns(this.fakeData);
-    this.loadData();
-
-    console.log(this.columns);
-    
-  }
-
-  loadData() {
-    if (this.useApi && this.apiUrl) {
+    if (this.useApi) {
       this.fetchDataFromApi();
     } else {
-      this.data = [...this.fakeData];
-      this.applyAll();
+      if (this.localData && this.localData.length > 0) {
+        this.isloading = true;
+        this.data = this.localData;
+        this.totalCount = this.localData.length;
+        this.columns = this.generateColumns(this.data);
+        this.applyAll();
+      }
     }
   }
 
   fetchDataFromApi() {
     this.isloading = false;
-    let params = new HttpParams().set('pageNumber', this.pageNumber.toString()).set('pageSize', this.pageSize.toString());
+    let params = new HttpParams().set('pageNumber', this.currentPage.toString()).set('pageSize', this.pageSize.toString());
     Object.keys(this.filters).forEach((key) => {
       const val = this.filters[key];
       if (val !== undefined && val !== null && val !== '') {
@@ -222,17 +230,16 @@ export class SharedTableComponent implements OnInit {
 
     this.http.get<any>(this.apiUrl, { params }).subscribe({
       next: (res) => {
+        console.log(res);
         this.isloading = true;
-        this.data = res.items;
-        this.pageNumber = res.pageNumber;
+        this.data = res.data;
+        this.currentPage = res.currentPage;
         this.pageSize = res.pageSize;
         this.totalCount = res.totalCount;
         this.applyAll();
       },
       error: (err) => {
         console.error('خطا در دریافت داده از API:', err);
-        this.data = [...this.fakeData];
-        this.applyAll();
       },
     });
   }
@@ -294,6 +301,8 @@ export class SharedTableComponent implements OnInit {
   sortDirection: 'asc' | 'desc' | null = null;
 
   sortData(field: string) {
+    if (!this.enableSorting) return;
+
     if (this.sortField === field) {
       if (this.sortDirection === 'asc') {
         this.sortDirection = 'desc';
@@ -318,6 +327,11 @@ export class SharedTableComponent implements OnInit {
   applyAll() {
     if (this.useApi) {
       this.columns = this.generateColumns(this.data);
+      this.columns.forEach((col) => {
+        if (!(col.field in this.filters)) {
+          this.filters[col.field] = '';
+        }
+      });
       this.filteredData = [...this.data];
     } else {
       this.filteredData = this.data.filter((item) => {
@@ -349,35 +363,33 @@ export class SharedTableComponent implements OnInit {
       });
     }
 
-    if (this.sortField && this.sortDirection) {
-      this.filteredData.sort((a, b) => {
-        let valA: any = a[this.sortField!];
-        let valB: any = b[this.sortField!];
+    // if (this.sortField && this.sortDirection) {
+    //   this.filteredData.sort((a, b) => {
+    //     let valA: any = a[this.sortField!];
+    //     let valB: any = b[this.sortField!];
 
-        if (valA == null) return 1;
-        if (valB == null) return -1;
+    //     if (valA == null) return 1;
+    //     if (valB == null) return -1;
 
-        if (this.columns.find((c) => c.field === this.sortField)?.type === 'date') {
-          valA = this.normalizeDate(valA);
-          valB = this.normalizeDate(valB);
-        }
+    //     if (this.columns.find((c) => c.field === this.sortField)?.type === 'date') {
+    //       valA = this.normalizeDate(valA);
+    //       valB = this.normalizeDate(valB);
+    //     }
 
-        if (!isNaN(valA) && !isNaN(valB)) {
-          return this.sortDirection === 'asc' ? Number(valA) - Number(valB) : Number(valB) - Number(valA);
-        }
+    //     if (!isNaN(valA) && !isNaN(valB)) {
+    //       return this.sortDirection === 'asc' ? Number(valA) - Number(valB) : Number(valB) - Number(valA);
+    //     }
 
-        if (typeof valA === 'string' && typeof valB === 'string') {
-          return this.sortDirection === 'asc' ? valA.localeCompare(valB, 'fa') : valB.localeCompare(valA, 'fa');
-        }
+    //     if (typeof valA === 'string' && typeof valB === 'string') {
+    //       return this.sortDirection === 'asc' ? valA.localeCompare(valB, 'fa') : valB.localeCompare(valA, 'fa');
+    //     }
 
-        return this.sortDirection === 'asc' ? (valA > valB ? 1 : -1) : valA < valB ? 1 : -1;
-      });
-    }
+    //     return this.sortDirection === 'asc' ? (valA > valB ? 1 : -1) : valA < valB ? 1 : -1;
+    //   });
+    // }
   }
 
   onDateRangeChange(field: string, rangeType: 'from' | 'to', value: any) {
-    console.log('Selected date:', value);
-
     let dateValue = '';
 
     if (value) {
@@ -398,10 +410,17 @@ export class SharedTableComponent implements OnInit {
     }
   }
 
+  private filterTimeout: any;
+
   onTextFilterChange(field: string, value: string) {
-    if (value) this.filters[field] = value;
-    else delete this.filters[field];
-    this.reloadDataOrFilter();
+    if (!this.enableFiltering) return;
+
+    clearTimeout(this.filterTimeout);
+    this.filterTimeout = setTimeout(() => {
+      if (value) this.filters[field] = value;
+      else delete this.filters[field];
+      this.reloadDataOrFilter();
+    }, 1500);
   }
 
   onTextFilterChange2(field: string, value: any) {
@@ -417,6 +436,8 @@ export class SharedTableComponent implements OnInit {
   }
 
   onSelectFilterChange(field: string, value: string) {
+    if (!this.enableFiltering) return;
+
     if (value) this.filters[field] = value;
     else delete this.filters[field];
     this.reloadDataOrFilter();
@@ -429,9 +450,12 @@ export class SharedTableComponent implements OnInit {
   }
 
   reloadDataOrFilter() {
+    if (!this.enableFiltering) return;
+
     if (this.useApi && this.apiUrl) {
       this.fetchDataFromApi();
-    } else {
+    } else if (this.localData && this.localData.length > 0) {
+      this.data = this.localData;
       this.applyAll();
     }
   }
@@ -453,15 +477,15 @@ export class SharedTableComponent implements OnInit {
   }
 
   nextPage() {
-    if ((this.pageNumber + 1) * this.pageSize < this.totalCount) {
-      this.pageNumber++;
+    if (this.currentPage * this.pageSize < this.totalCount) {
+      this.currentPage++;
       this.fetchDataFromApi();
     }
   }
 
   prevPage() {
-    if (this.pageNumber > 0) {
-      this.pageNumber--;
+    if (this.currentPage > 0) {
+      this.currentPage--;
       this.fetchDataFromApi();
     }
   }
@@ -506,9 +530,21 @@ export class SharedTableComponent implements OnInit {
       return '';
     }
   }
+
+  reloadData() {
+    if (this.useApi && this.apiUrl) {
+      this.fetchDataFromApi();
+    } else if (this.localData && this.localData.length > 0) {
+      this.data = this.localData;
+      this.applyAll();
+    }
+  }
+
+  trackByColumn(index: number, col: any): string {
+    return col.field;
+  }
+
+  trackByRow(index: number, row: any): any {
+    return row.id ?? index;
+  }
 }
-
-
-
-
-

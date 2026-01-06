@@ -1,149 +1,123 @@
-<div *ngIf="isloading" class="card-body" dir="rtl">
-  <div class="table-responsive" style="min-height: 200px">
-    <table class="table align-middle dt-responsive nowrap w-100 table-check">
-      <thead class="table-light">
-        <tr></tr>
-        <tr>
-          <th *ngIf="enableSelection" class="text-center">
-            <input type="checkbox" [checked]="isAllSelected()" [indeterminate]="isIndeterminate()" (change)="toggleSelectAll($event)" />
-          </th>
-          <th *ngFor="let col of columns" class="position-relative user-select-none text-center">
-            <span *ngIf="col.sortable !== false" (click)="sortData(col.field)" style="cursor: pointer">
-              {{ col.title }}
-              <span *ngIf="sortField === col.field">
-                <ng-container *ngIf="sortDirection === 'asc'">▲</ng-container>
-                <ng-container *ngIf="sortDirection === 'desc'">▼</ng-container>
+<ng-container *ngIf="isloading; else loadingTemplate">
+  <div class="card-body" dir="rtl">
+    <div class="table-responsive" style="min-height: 200px">
+      <table class="table align-middle dt-responsive nowrap w-100 table-check">
+        <thead class="table-light">
+          <tr>
+            <th *ngIf="enableSelection" class="text-center">
+              <input type="checkbox" [checked]="isAllSelected()" [indeterminate]="isIndeterminate()" (change)="toggleSelectAll($event)" />
+            </th>
+            <th class="text-center">#</th>
+            <th *ngFor="let col of columns; trackBy: trackByColumn" class="position-relative user-select-none text-center">
+              <span *ngIf="enableSorting && col.sortable !== false" (click)="sortData(col.field)" style="cursor: pointer">
+                {{ col.title }}
+                <span *ngIf="enableSorting && sortField === col.field">
+                  <ng-container *ngIf="sortDirection === 'asc'">▲</ng-container>
+                  <ng-container *ngIf="sortDirection === 'desc'">▼</ng-container>
+                </span>
               </span>
-            </span>
-            <span *ngIf="col.sortable === false">
-              {{ col.title }}
-            </span>
+              <span *ngIf="!enableSorting || col.sortable === false">
+                {{ col.title }}
+              </span>
+              <button *ngIf="enableFiltering && col.filterable" (click)="toggleFilter(col.field)" class="btn btn-light border-0" style="padding: 0 !important ; --bs-btn-hover-bg: inherit; --bs-btn-hover-color: rgb(165, 161, 161); text-decoration: none">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 4h14M6 4l6 7v6l2 2v-8l3-4" />
+                  <path d="M19 15v6M16 18h6" />
+                </svg>
+              </button>
+              <div *ngIf="enableFiltering && filterOpen[col.field] && col.filterable" class="position-absolute bg-white border p-2 shadow-sm" style="top: 100%; right: 30%; min-width: 150px; z-index: 10">
+                <div>
+                  <p>فیلنر بر اساس : {{ col.title }}</p>
+                </div>
+                <ng-container [ngSwitch]="col.type">
+                  <ng-container *ngSwitchCase="'string'">
+                    <input placeholder="{{ col.title }}" type="text" [value]="filters[col.field] || ''" (input)="onTextFilterChange(col.field, $any($event.target).value)" class="form-control form-control-sm" />
+                  </ng-container>
+                  <ng-container *ngSwitchCase="'boolean'">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" [checked]="filters[col.field]" (change)="onCheckboxFilterChange(col.field, $any($event.target).checked)" />
+                      <label class="form-check-label">دارد</label>
+                    </div>
+                  </ng-container>
+                  <ng-container *ngSwitchCase="'select'">
+                    <select class="form-select form-select-sm" [(ngModel)]="filters[col.field]" (ngModelChange)="onSelectFilterChange(col.field, $event)">
+                      <option value="">همه</option>
+                      <option *ngFor="let option of col.options" [value]="option.value">
+                        {{ option.label }}
+                      </option>
+                    </select>
+                  </ng-container>
+                  <ng-container *ngSwitchCase="'radio'">
+                    <div *ngFor="let option of col.options" class="form-check">
+                      <input type="radio" [name]="col.field" class="form-check-input" [value]="option" [checked]="filters[col.field] === option" (change)="onRadioFilterChange(col.field, option)" />
+                      <label class="form-check-label">{{ option }}</label>
+                    </div>
+                  </ng-container>
+                  <ng-container *ngSwitchCase="'date'">
+                    <ng-container *ngIf="calendarType === 'miladi'">
+                      <label>از:</label>
+                      <input type="date" [value]="filters[col.field + '_from'] || ''" (input)="onDateRangeChange(col.field, 'from', $any($event.target).value)" class="form-control form-control-sm py-1 mb-1" />
+                      <label>تا:</label>
+                      <input type="date" [value]="filters[col.field + '_to'] || ''" (input)="onDateRangeChange(col.field, 'to', $any($event.target).value)" class="form-control form-control-sm py-1" />
+                    </ng-container>
+                    <ng-container *ngIf="calendarType === 'jalali'">
+                      <label>از:</label>
+                      <ng-persian-datepicker id="jalali" [timeEnable]="false" [uiHideAfterSelectDate]="true" [dateFormat]="'YYYY/MM/DD'" (dateOnSelect)="onDateRangeChange(col.field, 'from', $any($event))">
+                        <input id="expectedCompletionDatePersian" class="form-control form-control-sm py-1" [formControl]="datapicker" readonly />
+                      </ng-persian-datepicker>
+                      <label>تا:</label>
+                      <ng-persian-datepicker [timeEnable]="false" [uiHideAfterSelectDate]="true" [dateFormat]="'YYYY/MM/DD'" (dateOnSelect)="onDateRangeChange(col.field, 'to', $any($event))">
+                        <input id="expectedCompletionDatePersian" class="form-control form-control-sm py-1" [formControl]="datapicker2" readonly />
+                      </ng-persian-datepicker>
+                    </ng-container>
+                  </ng-container>
+                </ng-container>
 
-            <button *ngIf="col.filterable" (click)="toggleFilter(col.field)" class="btn btn-light border-0" style="padding: 0 !important ; --bs-btn-hover-bg: inherit; --bs-btn-hover-color: rgb(165, 161, 161); text-decoration: none">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 4h14M6 4l6 7v6l2 2v-8l3-4" />
-                <path d="M19 15v6M16 18h6" />
-              </svg>
-            </button>
-            <div *ngIf="filterOpen[col.field] && col.filterable" class="position-absolute bg-white border p-2 shadow-sm" style="top: 100%; right: 30%; min-width: 150px; z-index: 10">
-              <div>
-                <p>فیلنر بر اساس : {{ col.title }}</p>
+                <button class="btn btn-sm btn-outline-danger mt-2 w-100" (click)="clearFilter(col.field)">حذف فیلتر</button>
               </div>
-
-              <ng-container *ngIf="col.type === 'string'">
-                <input placeholder="{{ col.title }}" type="text" [value]="filters[col.field] || ''" (input)="onTextFilterChange(col.field, $any($event.target).value)" class="form-control form-control-sm" />
-              </ng-container>
-
-              <ng-container *ngIf="col.type === 'boolean'">
-                <div class="form-check form-check-inline">
-                  <input class="form-check-input" type="checkbox" [checked]="filters[col.field]" (change)="onCheckboxFilterChange(col.field, $any($event.target).checked)" />
-                  <label class="form-check-label">دارد</label>
-                </div>
-              </ng-container>
-
-              <ng-container *ngIf="col.type === 'select'">
-                <select class="form-select form-select-sm" [value]="filters[col.field] || ''" (change)="onSelectFilterChange(col.field, $any($event.target).value)">
-                  <option value="">همه</option>
-                  <option *ngFor="let option of col.options" [value]="option">
-                    {{ option }}
-                  </option>
-                </select>
-              </ng-container>
-
-              <ng-container *ngIf="col.type === 'radio'">
-                <div *ngFor="let option of col.options" class="form-check">
-                  <input type="radio" [name]="col.field" class="form-check-input" [value]="option" [checked]="filters[col.field] === option" (change)="onRadioFilterChange(col.field, option)" />
-                  <label class="form-check-label">{{ option }}</label>
-                </div>
-              </ng-container>
-
-              <ng-container *ngIf="col.type === 'date'">
-                <ng-container *ngIf="calendarType === 'miladi'">
-                  <label>از:</label>
-                  <input type="date" [value]="filters[col.field + '_from'] || ''" (input)="onDateRangeChange(col.field, 'from', $any($event.target).value)" class="form-control form-control-sm py-1 mb-1" />
-
-                  <label>تا:</label>
-                  <input type="date" [value]="filters[col.field + '_to'] || ''" (input)="onDateRangeChange(col.field, 'to', $any($event.target).value)" class="form-control form-control-sm py-1" />
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of pagedData; let i = index; trackBy: trackByRow">
+            <td *ngIf="enableSelection" class="text-center">
+              <input type="checkbox" [checked]="isSelected(row)" (change)="toggleSelection(row, $event)" />
+            </td>
+            <td class="text-center">
+              {{ (currentPage - 1) * pageSize + i + 1 }}
+            </td>
+            <td *ngFor="let col of columns" class="text-center align-middle" [ngStyle]="columnStyles[col.field]">
+              <ng-container [ngSwitch]="col.type">
+                <ng-container *ngSwitchCase="'action'">
+                  <ng-container *ngFor="let action of actions">
+                    <button class="btn btn-sm me-1" [ngClass]="'btn-' + (action.type || 'secondary')" (click)="action.callback(row)">
+                      <i *ngIf="action.icon" class="{{ action.icon }} me-1"></i>
+                      {{ action.label }}
+                    </button>
+                  </ng-container>
                 </ng-container>
-
-                <ng-container *ngIf="calendarType === 'jalali'">
-                  <label>از:</label>
-                  <ng-persian-datepicker id="jalali" [timeEnable]="false" [uiHideAfterSelectDate]="true" [dateFormat]="'YYYY/MM/DD'" (dateOnSelect)="onDateRangeChange(col.field, 'from', $any($event))">
-                    <input id="expectedCompletionDatePersian" class="form-control form-control-sm py-1" [formControl]="datapicker" readonly />
-                  </ng-persian-datepicker>
-
-                  <label>تا:</label>
-                  <ng-persian-datepicker [timeEnable]="false" [uiHideAfterSelectDate]="true" [dateFormat]="'YYYY/MM/DD'" (dateOnSelect)="onDateRangeChange(col.field, 'to', $any($event))">
-                    <input id="expectedCompletionDatePersian" class="form-control form-control-sm py-1" [formControl]="datapicker2" readonly />
-                  </ng-persian-datepicker>
+                <ng-container *ngSwitchDefault>
+                  {{ getDisplayValue(row, col) }}
                 </ng-container>
               </ng-container>
-
-              <button class="btn btn-sm btn-outline-danger mt-2 w-100" (click)="clearFilter(col.field)">حذف فیلتر</button>
-            </div>
-          </th>
-        </tr>
-      </thead>
-
-      <tbody>
-        <tr *ngFor="let row of pagedData"></tr>
-        <tr *ngFor="let row of pagedData">
-          <td *ngIf="enableSelection" class="text-center">
-            <input type="checkbox" [checked]="isSelected(row)" (change)="toggleSelection(row, $event)" />
-          </td>
-          <td *ngFor="let col of columns" class="text-center align-middle">
-            <ng-container [ngSwitch]="col.type">
-              <ng-container *ngSwitchCase="'boolean'">
-                {{ row[col.field] }}
-              </ng-container>
-
-              <ng-container *ngSwitchCase="'select'">
-                {{ row[col.field] }}
-              </ng-container>
-
-              <ng-container *ngSwitchCase="'radio'">
-                {{ row[col.field] }}
-              </ng-container>
-
-              <ng-container *ngSwitchCase="'date'">
-                <!-- {{ calendarType === 'jalali' ? toJalali(row[col.field]) : row[col.field] }} -->
-                {{ row[col.field] }}
-              </ng-container>
-
-              <ng-container *ngSwitchDefault>
-                {{ row[col.field] }}
-              </ng-container>
-
-              <ng-container *ngSwitchCase="'action'">
-                <ng-container *ngFor="let action of actions">
-                  <button class="btn btn-sm me-1" [ngClass]="'btn-' + (action.type || 'secondary')" (click)="action.callback(row)">
-                    <i *ngIf="action.icon" class="{{ action.icon }} me-1"></i>
-                    {{ action.label }}
-                  </button>
-                </ng-container>
-              </ng-container>
-            </ng-container>
-          </td>
-        </tr>
-        <tr *ngIf="filteredData.length === 0">
-          <td [attr.colspan]="columns.length" class="text-center text-muted">داده‌ای یافت نشد.</td>
-        </tr>
-      </tbody>
-    </table>
+            </td>
+          </tr>
+          <tr *ngIf="filteredData.length === 0">
+            <td [attr.colspan]="columns.length" class="text-center text-muted">داده‌ای یافت نشد.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="my-4 d-flex justify-content-center align-items-center gap-3">
+      <button (click)="prevPage()" [disabled]="currentPage <= 1" class="btn btn-outline-dark px-3">قبلی</button>
+      <span class="fw-bold text-dark px-3 py-2 rounded"> صفحه {{ currentPage }} از {{ ceil(totalCount / pageSize) }} </span>
+      <button (click)="nextPage()" [disabled]="currentPage * pageSize >= totalCount" class="btn btn-outline-dark px-3">بعدی</button>
+    </div>
   </div>
+</ng-container>
 
-  <div class="mt-4 d-flex justify-content-center align-items-center gap-3">
-    <button (click)="prevPage()" [disabled]="pageNumber === 0" class="btn btn-outline-dark rounded-pill px-3 shadow-sm fw-bold">قبلی</button>
-
-    <span class="fw-bold text-dark px-3 py-2 rounded"> صفحه {{ pageNumber + 1 }} از {{ ceil(totalCount / pageSize) }} </span>
-
-    <button (click)="nextPage()" [disabled]="(pageNumber + 1) * pageSize >= totalCount" class="btn btn-outline-dark rounded-pill px-3 shadow-sm fw-bold">بعدی</button>
+<ng-template #loadingTemplate>
+  <div class="d-flex align-items-center justify-content-center" style="width: 100vw; height: 100vh">
+    <span class="loader"></span>
   </div>
-</div>
-
-
-<div class="h-100 w-100 d-flex align-item-center justify-content-center" *ngIf="!isloading">
-  <span class="loader"></span>
-</div>
-
-
+</ng-template>
